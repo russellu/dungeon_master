@@ -68,11 +68,11 @@ public class Fighter
 
         if (teamNumber == 0)
         {
-            teamColor = new Color(0.15f, 1f, 0.15f); 
+            teamColor = new Color(1f, 1f, 1f); 
         }
         else if (teamNumber == 1)
         {
-            teamColor = new Color(1f, 0.15f, 0.15f); 
+            teamColor = new Color(0.9f, 0.35f, 0.0f); 
         }
 
         Physics2D.gravity = Vector2.zero;
@@ -89,7 +89,7 @@ public class Fighter
         bodySpriteObject = new GameObject();
         weaponSpriteObject = new GameObject();
 
-        float scalef = 0.45f;
+        float scalef = 0.55f;
         bodyWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
         weaponBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
         bodySpriteObject.transform.localScale = new Vector3(scalef, scalef, 1f);
@@ -107,7 +107,7 @@ public class Fighter
         bodySpriteObject.AddComponent<SpriteRenderer>();
         bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
         bodySpriteObject.AddComponent<Rigidbody2D>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().color = teamColor;
+        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(0.5f,0.5f,0.5f,1f);
 
        //  bodySpriteObject.AddComponent<CircleCollider2D>();
        //  bodySpriteObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
@@ -128,10 +128,10 @@ public class Fighter
         weaponBodyObject.AddComponent<SpriteRenderer>();
         weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
         weaponBodyObject.AddComponent<Rigidbody2D>();
-        weaponBodyObject.GetComponent<SpriteRenderer>().color = teamColor;
+        weaponBodyObject.GetComponent<SpriteRenderer>().color = new Color(0.5f, 0.5f, 0.5f, 1f);
 
-   //     weaponBodyObject.AddComponent<CircleCollider2D>();
-    //      weaponBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
+        //     weaponBodyObject.AddComponent<CircleCollider2D>();
+        //      weaponBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
 
 
         weaponSpriteObject.AddComponent<SpriteRenderer>();
@@ -265,25 +265,10 @@ public class Fighter
 
     public void InitiateRandomWalk(TileBehavior tileBehavior, int length)
     {
-        bool[,] tiles = tileBehavior.mapUnveiled;
-        int[] currentPosition = tileBehavior.GetTileIndex(GetPosition());
-        List<int[]> unveiledIndexList = tileBehavior.unveiledIndexList;
-        List<Vector2> allPath = new List<Vector2>(); 
-
-        for (int i = 0; i < length; i++)
-        {
-            int randomIndex = Random.Range(0, unveiledIndexList.Count);
-            int[] tileIndex = unveiledIndexList[randomIndex];
-
-            List<Vector2> path = new Astar(tileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
-            foreach (Vector2 pathVec in path)
-                allPath.Add(pathVec);
-
-            currentPosition = tileIndex; 
-        }
-
-        SetupWalkingPath(allPath, tileBehavior.mapPositionMatrix); 
+        creatureManager.main.InitiateRandomWalk(tileBehavior, length, this); 
     }
+
+
 
 
     public void OnHit(float damage)

@@ -1,6 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Threading;
+using System; 
+
 
 public class Main : MonoBehaviour
 {
@@ -10,7 +13,9 @@ public class Main : MonoBehaviour
     public static AudioClip marble;
     public static AudioClip tin;
     public static AudioClip wood;
-    public static AudioClip stab; 
+    public static AudioClip stab;
+    public static AudioClip portal;
+    public static AudioClip gruntSpawn;
 
     TileBehavior tileBehavior;
     RoomPathFinder roomPathFinder;
@@ -35,8 +40,11 @@ public class Main : MonoBehaviour
         tin = Resources.Load<AudioClip>("audios/tin");
         wood = Resources.Load<AudioClip>("audios/wood");
         stab = Resources.Load<AudioClip>("audios/stab");
+        portal = Resources.Load<AudioClip>("audios/portal");
+        gruntSpawn = Resources.Load<AudioClip>("audios/grunt_spawn");
 
         creatureManager = new CreatureManager();
+        creatureManager.main = this; 
 
         tileBehavior = new TileBehavior(this, creatureManager);
         creatureManager.SetTileBehavior(tileBehavior);
@@ -107,6 +115,23 @@ public class Main : MonoBehaviour
             mainCamera.orthographicSize -= 0.5f;
         }
 
+        if (Input.GetKey(KeyCode.DownArrow))
+            mainCamera.transform.Translate(0, -.1f, 0);
+        if (Input.GetKey(KeyCode.UpArrow))
+            mainCamera.transform.Translate(0, 0.1f, 0);
+        if (Input.GetKey(KeyCode.RightArrow))
+            mainCamera.transform.Translate(0.1f, 0, 0);
+        if (Input.GetKey(KeyCode.LeftArrow))
+            mainCamera.transform.Translate(-0.1f, 0, 0);
+        if(Input.GetKey(KeyCode.Equals))
+            mainCamera.orthographicSize -= 0.1f;
+        if (Input.GetKey(KeyCode.Minus))
+            mainCamera.orthographicSize += 0.1f;
+
+
+
+        Level_01.Update(Time.deltaTime); 
+
         /*
         if (Input.GetMouseButtonDown(0))
         {
@@ -132,6 +157,64 @@ public class Main : MonoBehaviour
     public void DestroyGameObject(GameObject obj)
     {
         Destroy(obj);
+    }
+
+
+
+    public void InitiateRandomWalk(TileBehavior tileBehavior, int length, Fighter fighter)
+    {
+        // IEnumerator coroutine = SearchPath(tileBehavior, length, fighter);
+        // StartCoroutine(coroutine);
+        staticTileBehavior = tileBehavior;
+        Main.length = length;
+        Main.fighter = fighter;
+        Thread t = new Thread(NewThread);
+        t.Start();
+
+    }
+    static TileBehavior staticTileBehavior;
+    static int length;
+    static Fighter fighter; 
+
+
+    static void NewThread()
+    {
+        bool[,] tiles = staticTileBehavior.mapUnveiled;
+        int[] currentPosition = staticTileBehavior.GetTileIndex(fighter.GetPosition());
+        List<int[]> unveiledIndexList = staticTileBehavior.unveiledIndexList;
+        List<Vector2> allPath = new List<Vector2>();
+
+        for (int i = 0; i < length; i++)
+        {
+
+            int randomIndex;
+            int[] tileIndex;
+            List<Vector2> path; 
+
+            System.Random rnd = new System.Random();
+
+            // randomIndex = Random.Range(0, unveiledIndexList.Count);
+            randomIndex = rnd.Next(0, unveiledIndexList.Count); 
+            tileIndex = unveiledIndexList[randomIndex];
+            path = new Astar(staticTileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
+
+
+            while (path.Count <= 1)
+            {
+                //randomIndex = Random.Range(0, unveiledIndexList.Count);
+                randomIndex = rnd.Next(0, unveiledIndexList.Count);
+                tileIndex = unveiledIndexList[randomIndex];
+                path = new Astar(staticTileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
+            }
+
+            foreach (Vector2 pathVec in path)
+                allPath.Add(pathVec);
+
+            currentPosition = tileIndex;
+        }
+
+        fighter.SetupWalkingPath(allPath, staticTileBehavior.mapPositionMatrix);
+
     }
 
 

@@ -80,6 +80,7 @@ public class Imp {
       //  bodySpriteObject.GetComponent<PolygonCollider2D>().sharedMaterial = physicsMaterial;
 
         bodySpriteObject.AddComponent<Hit>();
+        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 0f);
 
         bodyWeaponObject.transform.parent = bodySpriteObject.transform;
         bodySpriteObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);

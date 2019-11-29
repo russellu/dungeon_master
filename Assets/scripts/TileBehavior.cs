@@ -60,15 +60,16 @@ public class TileBehavior
     string currentAlphaMask; 
 
     Main main;
-    CreatureManager creatureManager; 
+    CreatureManager creatureManager;
     
     //BaseGrid searchGrid; 
 
     public TileBehavior(Main main, CreatureManager creatureManager)
     {
         this.main = main;
-        this.creatureManager = creatureManager; 
+        this.creatureManager = creatureManager;
 
+     
         rockObject = new GameObject();
         strawTiles = Resources.LoadAll<Sprite>("terrains/cropstraw");
         rockTiles = Resources.LoadAll<Sprite>("terrains/croprock");
@@ -93,11 +94,33 @@ public class TileBehavior
         crackSprites[2] = Resources.Load<Sprite>("terrains/cracks/trans_crack_03");
         crackSprites[3] = Resources.Load<Sprite>("terrains/cracks/trans_crack_04");
 
+
+
         BuildMapPositionMatrix();
         InitAlphaInterfaceSprites();
-        ClearSpaceInMiddle();
+       // ClearSpaceInMiddle();
+        float[,,] unveilIndices = Level_01.Init(mapPositionMatrix, creatureManager);
+        for (int i = 0; i < unveilIndices.GetLength(0); i++)
+            for (int j = 0; j < unveilIndices.GetLength(0); j++)
+            {
+                if (unveilIndices[i, j,0] == 0)
+                {
+                 //   Debug.Log(mapPositionMatrix[i, j].x);
+                 //   Debug.Log("min y" + mapPositionMatrix[0, 0].y);
+                 //   Debug.Log("min x" + mapPositionMatrix[0, 0].x);
+
+                    if (i>1 && j>1 && i<unveilIndices.GetLength(0)-2 && j<unveilIndices.GetLength(1)-2)
+                        UnveilTile(new Vector3(mapPositionMatrix[i, j].x, mapPositionMatrix[i, j].y, -2));
+                }
+            }
+
+
+
 
     }
+
+
+
 
     public void StartPath(int[] end)
     {
@@ -163,21 +186,21 @@ public class TileBehavior
 
     private void InitAlphaInterfaceSprites()
     {
-        topAlphaInterface = Resources.Load<Sprite>("terrains/itfc_toptex");
-        botAlphaInterface = Resources.Load<Sprite>("terrains/itfc_bottex");
-        leftAlphaInterface = Resources.Load<Sprite>("terrains/itfc_lefttex");
-        rightAlphaInterface = Resources.Load<Sprite>("terrains/itfc_righttex");
-        topLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfc_toplefttex");
-        topRightAlphaInterface = Resources.Load<Sprite>("terrains/itfc_toprighttex");
-        botLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfc_botlefttex");
-        botRightAlphaInterface = Resources.Load<Sprite>("terrains/itfc_botrighttex");
-        leftRightAlphaInterface = Resources.Load<Sprite>("terrains/itfc_leftrighttex");
-        topBotAlphaInterface = Resources.Load<Sprite>("terrains/itfc_topbottex");
-        topBotLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfc_topbotlefttex");
-        topBotRightAlphaInterface = Resources.Load<Sprite>("terrains/itfc_topbotrighttex");
-        leftRightTopAlphaInterface = Resources.Load<Sprite>("terrains/itfc_leftrighttoptex");
-        leftRightBotAlphaInterface = Resources.Load<Sprite>("terrains/itfc_leftrightbottex");
-        leftRightTopBotAlphaInterface = Resources.Load<Sprite>("terrains/itfc_leftrighttopbottex");
+        topAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_toptex");
+        botAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_bottex");
+        leftAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_lefttex");
+        rightAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_righttex");
+        topLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_toplefttex");
+        topRightAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_toprighttex");
+        botLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_botlefttex");
+        botRightAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_botrighttex");
+        leftRightAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_leftrighttex");
+        topBotAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_topbottex");
+        topBotLeftAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_topbotlefttex");
+        topBotRightAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_topbotrighttex");
+        leftRightTopAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_leftrighttoptex");
+        leftRightBotAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_leftrightbottex");
+        leftRightTopBotAlphaInterface = Resources.Load<Sprite>("terrains/itfcs/itfc_leftrighttopbottex");
     }
 
     private void BuildMapPositionMatrix()
@@ -294,16 +317,19 @@ public class TileBehavior
 
     private int GetClosestEuclideanAccessible(Vector2 position)
     {
-        int closestInd = 0;
+        int closestInd = -1;
         float minDist = 9999999; 
         for (int i = 0; i < accessibleKeys.Count; i++)
         {
             GameObject obj = accessibleTagged[accessibleKeys[i]];
-            float dist = Vector2.Distance(obj.transform.position, position);
-            if (dist < minDist)
+            if (obj != null)
             {
-                minDist = dist;
-                closestInd = i; 
+                float dist = Vector2.Distance(obj.transform.position, position);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    closestInd = i;
+                }
             }
         }
         return closestInd; 
@@ -326,11 +352,14 @@ public class TileBehavior
         if (accessibleTagged.Count > 0)
         {
 
-            int closestTileIndex = GetClosestEuclideanAccessible(position); 
-            string tag = accessibleKeys[closestTileIndex];
-            GameObject obj = accessibleTagged[tag];
-            int[] tileIndex = GetTileIndex(obj.transform.position);
-            StartPathToTagged(tileIndex, tag);
+            int closestTileIndex = GetClosestEuclideanAccessible(position);
+            if (closestTileIndex >= 0)
+            {
+                string tag = accessibleKeys[closestTileIndex];
+                GameObject obj = accessibleTagged[tag];
+                int[] tileIndex = GetTileIndex(obj.transform.position);
+                StartPathToTagged(tileIndex, tag);
+            }
         }
 
     }
@@ -424,7 +453,7 @@ public class TileBehavior
     private Sprite SelectAlphaMask(int xIndex, int yIndex)
     {
         Sprite tileMask = null;
-
+     //   Debug.Log("yindex= " + yIndex + " xindex=" + xIndex); 
         bool above = !mapUnveiled[xIndex, yIndex - 1];
         bool below = !mapUnveiled[xIndex, yIndex + 1];
         bool left = !mapUnveiled[xIndex - 1, yIndex];
@@ -524,7 +553,7 @@ public class TileBehavior
     public void UnveilTile(Vector3 pointMain)
     {
         int[] tileIndices = GetTileIndex(pointMain);
-
+      //  Debug.Log(tileIndices[0]+" "+tileIndices[1]);
         Vector2 mapPosition = mapPositionMatrix[tileIndices[0], tileIndices[1]];
 
         if (mapTagged[tileIndices[0], tileIndices[1]] == true)
@@ -543,6 +572,10 @@ public class TileBehavior
             AddAlphaMask(mapPosition, tileIndices);
             CheckSurroundingTileAlphaMask(mapPosition, tileIndices);
         }
+ 
+
+
+        Level_01.CheckUnveiled(tileIndices[0], tileIndices[1]);
 
         unveiledIndexList.Add(tileIndices); 
 
