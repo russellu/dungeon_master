@@ -10,41 +10,48 @@ public class Portal
     static List<float> nextCreatureTimes = new List<float>();
     static List<float> currentTimeCounts = new List<float>();
     static List<int> portalPolaritys = new List<int>(); 
-    static Vector2[,] mapPositionMatrix; 
+    static Vector2[,] mapPositionMatrix;
+    static string[] portalNames = new string[] { "LevelItems/portal", "LevelItems/enemy_portal" };
+    static string[] openPortalNames = new string[] { "LevelItems/portal_open", "LevelItems/enemy_portal_open" };
 
     public static void Init(int polarity, int[] portalLoc, Vector2[,] mapPosMat) 
     {
         mapPositionMatrix = mapPosMat;
-        portalLocations.Add(portalLoc); 
+        portalLocations.Add(portalLoc);
+        portalPolaritys.Add(polarity);
+        portalOpens.Add(false);
+        nextCreatureTimes.Add(5);
+        currentTimeCounts.Add(0); 
+
 
         int portalX = portalLoc[0];
         int portalY = portalLoc[1];
 
-        Sprite portalSprite = Resources.Load<Sprite>("LevelItems/portal");
-        GameObject portal = new GameObject("portal: " + portalX + "," + portalY);
+        Sprite portalSprite = Resources.Load<Sprite>(portalNames[polarity]);
+        GameObject portal = new GameObject("portal_" + portalLocations.Count + ": " + portalX + "," + portalY);
         portal.AddComponent<SpriteRenderer>();
         portal.GetComponent<SpriteRenderer>().sprite = portalSprite;
         portal.transform.position = new Vector3(
         mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -2.5f);
         portals.Add(portal); 
+
+
     }
 
     public static void Update(float deltaTime,CreatureManager creatureManager)
     {
         //Debug.Log("deltaTime = " + deltaTime);
-
         for (int i = 0; i < portals.Count; i++)
         {
-            currentTimeCounts[i] += deltaTime;
-            if (currentTimeCounts[i] > nextCreatureTimes[i])
+            if (portalOpens[i])
             {
-                currentTimeCounts[i] = 0;
-                if (portalOpens[i])
+                currentTimeCounts[i] += deltaTime;
+                if (currentTimeCounts[i] > nextCreatureTimes[i])
                 {
+                    currentTimeCounts[i] = 0;
                     Vector2 portalLoc = mapPositionMatrix[portalLocations[i][0], portalLocations[i][1]];
-                    creatureManager.Spawn(portalLoc);
+                    creatureManager.Spawn(portalLoc,portalPolaritys[i]);
                     Main.audioSource.PlayOneShot(Main.gruntSpawn, 1f);
-
                 }
             }
         }
@@ -52,10 +59,9 @@ public class Portal
 
     public static void CheckUnveiled(int x, int y)
     {
-        for(int i=0;i<portalLocations.Count;i++)
-       // Debug.Log("cehcking unveiled "+"x="+x+"y="+y+"locx="+portalLocation[0]+"locy="+portalLocation[1]); 
-        if (portalLocations[i][0] == x && portalLocations[i][1] == y)
-            UpdatePortalSprite(i);
+        for (int i = 0; i < portalLocations.Count; i++)
+            if (portalLocations[i][0] == x && portalLocations[i][1] == y)
+                UpdatePortalSprite(i);
     }
 
     public static void UpdatePortalSprite(int updateIndex)
@@ -64,7 +70,7 @@ public class Portal
 
         int portalX = portalLocations[updateIndex][0];
         int portalY = portalLocations[updateIndex][1];
-        Sprite portalSprite = Resources.Load<Sprite>("LevelItems/portal_open");
+        Sprite portalSprite = Resources.Load<Sprite>(openPortalNames[portalPolaritys[updateIndex]]);
         portals[updateIndex].GetComponent<SpriteRenderer>().sprite = portalSprite;
         portals[updateIndex].transform.position = new Vector3(
             mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -2.5f);

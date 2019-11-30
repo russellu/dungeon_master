@@ -76,6 +76,7 @@
     <Compile Include="Assets\scripts\Main.cs" />
     <Compile Include="Assets\scripts\Portal.cs" />
     <Compile Include="Assets\scripts\RoomPathFinder.cs" />
+    <Compile Include="Assets\scripts\Smelter.cs" />
     <Compile Include="Assets\scripts\Tile.cs" />
     <Compile Include="Assets\scripts\TileBehavior.cs" />
     <Reference Include="Unity.Timeline.Editor">

@@ -16,11 +16,11 @@ public class Main : MonoBehaviour
     public static AudioClip stab;
     public static AudioClip portal;
     public static AudioClip gruntSpawn;
+    public static AudioClip goldFalling; 
 
     TileBehavior tileBehavior;
     RoomPathFinder roomPathFinder;
     CreatureManager creatureManager; 
-
 
     Sprite circSprite;
     PhysicsMaterial2D physicsMaterial;
@@ -29,8 +29,10 @@ public class Main : MonoBehaviour
 
     float tapTime = 0f;
 
-    bool alreadyTagged = false; 
+    bool alreadyTagged = false;
 
+    public GameObject smallSphere;
+    List<GameObject> spheres;
 
     void Start()
     {
@@ -42,6 +44,8 @@ public class Main : MonoBehaviour
         stab = Resources.Load<AudioClip>("audios/stab");
         portal = Resources.Load<AudioClip>("audios/portal");
         gruntSpawn = Resources.Load<AudioClip>("audios/grunt_spawn");
+        goldFalling = Resources.Load<AudioClip>("audios/drop_gold");
+
 
         creatureManager = new CreatureManager();
         creatureManager.main = this; 
@@ -49,7 +53,7 @@ public class Main : MonoBehaviour
         tileBehavior = new TileBehavior(this, creatureManager);
         creatureManager.SetTileBehavior(tileBehavior);
 
-
+        /*
         Physics2D.gravity = Vector2.zero;
         Physics2D.velocityThreshold = 0.001f;
 
@@ -57,20 +61,8 @@ public class Main : MonoBehaviour
 
         physicsMaterial = new PhysicsMaterial2D();
         physicsMaterial.bounciness = 1;
-
-        //controls = new Controls(this);
-
-        /*
-        circSprite = Resources.Load("players/circle", typeof(Sprite)) as Sprite;
-        circObject = new GameObject("players/circ1");
-        SpriteRenderer rend1 = circObject.AddComponent(typeof(SpriteRenderer)) as SpriteRenderer;
-        rend1.sprite = circSprite;
-        circObject.transform.position = new Vector3(0, 1,-3);
-        circObject.AddComponent<Rigidbody2D>();
-        circObject.AddComponent<PolygonCollider2D>();
-        circObject.GetComponent<PolygonCollider2D>().sharedMaterial = physicsMaterial;
         */
-        //tileBehavior.TestAStar();   
+ 
     }
 
 
@@ -78,14 +70,6 @@ public class Main : MonoBehaviour
     void Update()
     {
 
-        /*
-        if (Input.GetMouseButton(0))
-        {
-            Vector3 pos = Input.mousePosition;
-            Vector3 pointMain = mainCamera.ScreenToWorldPoint(pos);
-            tileBehavior.UnveilTile(pointMain); 
-        }
-        */
         if (Input.GetMouseButtonDown(0))
         {
             Vector3 pos = Input.mousePosition;
@@ -130,28 +114,12 @@ public class Main : MonoBehaviour
 
 
 
-        Level_01.Update(Time.deltaTime); 
+        Level_01.Update(Time.deltaTime);
+        //UpdatePathSpheres(); 
 
-        /*
-        if (Input.GetMouseButtonDown(0))
-        {
-            tapTime = Time.time;
-
-        }
-        if (Input.GetMouseButtonUp(0))
-        {
-            float tDiffMS = (Time.time - tapTime) * 1000;
-
-            if (tDiffMS < 250)
-            {
-                int[] tileIndex = tileBehavior.GetTileIndex(Camera.main.ScreenToWorldPoint(new Vector2(Input.mousePosition.x, Input.mousePosition.y)));
-                tileBehavior.StartPath(tileIndex); 
-            }
-
-        }
-        */
+        
+        
         creatureManager.UpdateAllCreatures(); 
-        //EditorControlHandler.Update(creatureManager, controls);      
     }
 
     public void DestroyGameObject(GameObject obj)
@@ -163,25 +131,16 @@ public class Main : MonoBehaviour
 
     public void InitiateRandomWalk(TileBehavior tileBehavior, int length, Fighter fighter)
     {
-        // IEnumerator coroutine = SearchPath(tileBehavior, length, fighter);
-        // StartCoroutine(coroutine);
-        staticTileBehavior = tileBehavior;
-        Main.length = length;
-        Main.fighter = fighter;
-        Thread t = new Thread(NewThread);
+        Thread t = new Thread(()=>ComputePathAsync(tileBehavior,fighter,length));
         t.Start();
 
     }
-    static TileBehavior staticTileBehavior;
-    static int length;
-    static Fighter fighter; 
 
-
-    static void NewThread()
+    void ComputePathAsync(TileBehavior tileBehavior, Fighter fighter, int length)
     {
-        bool[,] tiles = staticTileBehavior.mapUnveiled;
-        int[] currentPosition = staticTileBehavior.GetTileIndex(fighter.GetPosition());
-        List<int[]> unveiledIndexList = staticTileBehavior.unveiledIndexList;
+        bool[,] tiles = tileBehavior.mapUnveiled;
+        int[] currentPosition = tileBehavior.GetTileIndex(fighter.GetPosition());
+        List<int[]> unveiledIndexList = tileBehavior.unveiledIndexList;
         List<Vector2> allPath = new List<Vector2>();
 
         for (int i = 0; i < length; i++)
@@ -196,7 +155,7 @@ public class Main : MonoBehaviour
             // randomIndex = Random.Range(0, unveiledIndexList.Count);
             randomIndex = rnd.Next(0, unveiledIndexList.Count); 
             tileIndex = unveiledIndexList[randomIndex];
-            path = new Astar(staticTileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
+            path = new Astar(tileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
 
 
             while (path.Count <= 1)
@@ -204,7 +163,7 @@ public class Main : MonoBehaviour
                 //randomIndex = Random.Range(0, unveiledIndexList.Count);
                 randomIndex = rnd.Next(0, unveiledIndexList.Count);
                 tileIndex = unveiledIndexList[randomIndex];
-                path = new Astar(staticTileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
+                path = new Astar(tileBehavior.mapUnveiledJagged, currentPosition, tileIndex, "Euclidean").result;
             }
 
             foreach (Vector2 pathVec in path)
@@ -213,38 +172,33 @@ public class Main : MonoBehaviour
             currentPosition = tileIndex;
         }
 
-        fighter.SetupWalkingPath(allPath, staticTileBehavior.mapPositionMatrix);
+        fighter.SetupWalkingPath(allPath, tileBehavior.mapPositionMatrix);
 
     }
 
+    public void UpdatePathSpheres()
+    {
+        try
+        {
+            Fighter imp = creatureManager.fightersFriendly[0];
+            if (spheres == null)
+            {
+                spheres = new List<GameObject>();
+            }
+            if (imp.currentPath != null)
+                for (int i = 0; i < imp.currentPath.Count; i++)
+                {
+                    if (spheres.Count <= i)
+                    {
+                        GameObject newSphere = Instantiate(Resources.Load("prefabs/pathsphere")) as GameObject;
+                        spheres.Add(newSphere);
+                    }
+                    spheres[i].transform.position = new Vector3(imp.currentPath[i].x, imp.currentPath[i].y, -2.5f);
+                }
+        }
+        catch (Exception e) { }
 
+    }
 }
 
 
-
-/*
-Vector2 spriteCenter = new Vector2(mapBounds.center.x, mapBounds.center.y);
-Vector2 spriteBounds = new Vector2(mapBounds.extents.x, mapBounds.extents.y);
-
-int sqrtTiles = (int)Mathf.Sqrt(strawTiles.Length);
-
-float tileWidth = (spriteBounds.x*2) / sqrtTiles;
-float tileHeight = (spriteBounds.y*2) / sqrtTiles;
-
-//Debug.Log("nTiles = " + sqrtTiles + " tileWidth = " + tileWidth + " tileHeight = " + tileHeight);
-//Debug.Log("spritebounds.x = " + spriteBounds.x + " spritebounds.y = " + spriteBounds.y); 
-
-int tileCount = 0; 
-
-for (float j = spriteBounds.y; j > -spriteBounds.y + tileHeight; j-=tileHeight)
-    for (float i = -spriteBounds.x; i < spriteBounds.x - tileWidth; i += tileWidth)
-    {
-        GameObject gobj = new GameObject();
-        gobj.AddComponent<SpriteRenderer>();
-        gobj.GetComponent<SpriteRenderer>().sprite = strawTiles[tileCount];
-        gobj.transform.position = new Vector3(i,j,0); 
-
-        tileCount++;
-        //Debug.Log("tilecount = " + tileCount + "i = " + i + " j = " + j);
-    }
-*/

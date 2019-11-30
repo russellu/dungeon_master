@@ -10,7 +10,8 @@ public class CreatureManager
     public List<Fighter> fightersEnemy;
 
     TileBehavior tileBehavior;
-    public Main main; 
+    public Main main;
+    long framecount = 0; 
 
     public CreatureManager()
     {
@@ -24,43 +25,34 @@ public class CreatureManager
         fightersFriendly = new List<Fighter>();
         fightersEnemy = new List<Fighter>();
 
-        
-        /*
-        for (int i = 0; i < 40; i++)
+        float[] pos1 = new float[] { -1.8f,0.5f};
+        float[] pos2 = new float[] { -0.5f, -1f };
+
+        for (int i = 0; i < 0; i++)
         {
-            float newX = Random.Range(-.9f, .9f);
-            float newY = Random.Range(-.9f, .9f); 
+           // float newX = Random.Range(-1.8f, 0f);
+           // float newY = Random.Range(-1.8f, 0f); 
             
             if(i%2==0)
-                fightersFriendly.Add(new Fighter(this, new Vector3(newX, newY, -3), 0, .5f));
+                fightersFriendly.Add(new Fighter(this, new Vector3(pos1[0], pos1[1], -3), 0, .5f));
             else
-                fightersEnemy.Add(new Fighter(this, new Vector3(newX, newY, -3), 1, .5f));
+                fightersEnemy.Add(new Fighter(this, new Vector3(pos2[0], pos2[1], -3), 1, .5f));
                 
         }
-        */
-
-        /*
-        fightersFriendly.Add(new Fighter(this, new Vector3(0, 0, -3), 0, 1f));
-        fightersFriendly.Add(new Fighter(this, new Vector3(0.25f, 0, -3), 0, 1f));
-        fightersFriendly.Add(new Fighter(this, new Vector3(0, 0.25f, -3), 0, 1f));
-        fightersFriendly.Add(new Fighter(this, new Vector3(0.5f, 0.5f, -3), 0, 1f));
-
-        fightersEnemy.Add(new Fighter(this, new Vector3(-1, -1, -3), 1, 0.5f));
-        fightersEnemy.Add(new Fighter(this, new Vector3(-1, -.5f, -3), 1, 0.5f));
-        fightersEnemy.Add(new Fighter(this, new Vector3(-.8f, -.8f, -3), 1, 0.5f));
-        */
+        
     }
 
-    public void Spawn(Vector2 location) {
+    public void Spawn(Vector2 location, int polarity) {
+        if(polarity==0)
+            fightersFriendly.Add(new Fighter(this, new Vector3(location.x, location.y, -3), polarity, .5f));
+        else if(polarity==1)
+            fightersEnemy.Add(new Fighter(this, new Vector3(location.x, location.y, -3), polarity, .5f));
 
-        fightersFriendly.Add(new Fighter(this, new Vector3(location.x, location.y, -3), 0, .5f));
     }
 
     public void SetTileBehavior(TileBehavior tileBehavior)
     {
         this.tileBehavior = tileBehavior;
-
-        //fightersEnemy[0].InitiateRandomWalk(tileBehavior, 35); 
     }
 
     public List<Imp> GetIdleImps()
@@ -78,16 +70,17 @@ public class CreatureManager
 
     public void UpdateAllCreatures()
     {
+        framecount++; 
 
         foreach (Imp imp in imps)
         {
             imp.Update(); 
 
         }
-
+        
         foreach (Fighter friendly in fightersFriendly)
         {
-            if (!friendly.wagingWar)
+            if (framecount%10==0)
                 friendly.SeekAndDestroy(fightersEnemy, tileBehavior);
 
             friendly.Update(tileBehavior); 
@@ -95,11 +88,12 @@ public class CreatureManager
 
         foreach (Fighter enemy in fightersEnemy)
         {
-            if (!enemy.wagingWar)
+            if (framecount%10==0)
                 enemy.SeekAndDestroy(fightersFriendly, tileBehavior); 
 
             enemy.Update(tileBehavior);
         }
+        
     }
 
     public void EraseCreature(Fighter creature)

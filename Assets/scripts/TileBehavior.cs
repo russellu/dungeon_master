@@ -120,8 +120,6 @@ public class TileBehavior
     }
 
 
-
-
     public void StartPath(int[] end)
     {
 
@@ -132,13 +130,13 @@ public class TileBehavior
             int[] start = GetTileIndex(imp.GetPosition());
 
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
-
+            /*
             for (int i = 0; i < path.Count; i++)
             {
                 GameObject gobj = unveiledTileObjects[(int)path[i].x, (int)path[i].y];
                 gobj.GetComponent<SpriteRenderer>().color = new Color(0.8f, .6f, 0);
             }
-
+            */
             imp.SetupWalkingPath(path, mapPositionMatrix, "", this, tagTileObjects[end[0],end[1]]);
         }
     }
@@ -160,6 +158,7 @@ public class TileBehavior
                 imp.SetupWalkingPath(path, mapPositionMatrix, gameObjectName, this, tagTileObjects[end[0], end[1]]);
             }        
         }
+        mapUnveiledJagged[end[1]][end[0]] = 1;
     }
 
     // check if any of the surrounding tiles are unveiled 
@@ -274,7 +273,7 @@ public class TileBehavior
 
                 if (CheckIfTaggedAccessible(tileIndices))
                 {
-                    Debug.Log("Tile is accessible, finding path...");
+                    //Debug.Log("Tile is accessible, finding path...");
                     accessibleTagged.Add(taggedOject.name, taggedOject);
                     accessibleKeys.Add(taggedOject.name); 
                     StartPathToTagged(tileIndices, taggedOject.name);
@@ -283,7 +282,8 @@ public class TileBehavior
                 {
                     inaccessibleTagged.Add(taggedOject.name, taggedOject);
                     inaccessibleKeys.Add(taggedOject.name); 
-                    Debug.Log("Tile is inaccessible, storing for later...");
+                   //
+                    //Debug.Log("Tile is inaccessible, storing for later...");
                 }
             }
         }
@@ -335,7 +335,7 @@ public class TileBehavior
         return closestInd; 
     }
 
-    public void UpdateDestroyedAndRequestAnother(string tileName, Vector2 position)
+    public bool UpdateDestroyedAndRequestAnother(string tileName, Vector2 position)
     {
         if (accessibleTagged.ContainsKey(tileName))
         {
@@ -361,7 +361,8 @@ public class TileBehavior
                 StartPathToTagged(tileIndex, tag);
             }
         }
-
+        else return false;
+        return true; 
     }
 
     private void RedefineAccessibleTagged()
@@ -453,7 +454,6 @@ public class TileBehavior
     private Sprite SelectAlphaMask(int xIndex, int yIndex)
     {
         Sprite tileMask = null;
-     //   Debug.Log("yindex= " + yIndex + " xindex=" + xIndex); 
         bool above = !mapUnveiled[xIndex, yIndex - 1];
         bool below = !mapUnveiled[xIndex, yIndex + 1];
         bool left = !mapUnveiled[xIndex - 1, yIndex];
@@ -572,8 +572,6 @@ public class TileBehavior
             AddAlphaMask(mapPosition, tileIndices);
             CheckSurroundingTileAlphaMask(mapPosition, tileIndices);
         }
- 
-
 
         Level_01.CheckUnveiled(tileIndices[0], tileIndices[1]);
 
@@ -585,8 +583,6 @@ public class TileBehavior
     {
         GameObject obj = accessibleTagged[taggedTileName];
         obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
-
-
     }
 
     public int[] GetTileIndex(Vector3 pointMain)

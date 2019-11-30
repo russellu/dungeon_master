@@ -35,7 +35,7 @@ public class Fighter
     Vector2 destinationVector;
     Vector2 directionVector;
     bool autoWalking;
-    List<Vector2> currentPath;
+    public List<Vector2> currentPath;
 
     int currentPathIndex = 0;
 
@@ -98,8 +98,9 @@ public class Fighter
         bodyWeaponObject.AddComponent<SpriteRenderer>();
         bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
 
-        //  bodyWeaponObject.AddComponent<CircleCollider2D>();
-       //  bodyWeaponObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
+        // bodyWeaponObject.AddComponent<CircleCollider2D>();
+        // bodyWeaponObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
+        //bodyWeaponObject.GetComponent<CircleCollider2D>().radius = 0.08f; 
 
 
         bodyWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
@@ -107,7 +108,7 @@ public class Fighter
         bodySpriteObject.AddComponent<SpriteRenderer>();
         bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
         bodySpriteObject.AddComponent<Rigidbody2D>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(0.5f,0.5f,0.5f,1f);
+        bodySpriteObject.GetComponent<SpriteRenderer>().color = teamColor;
 
        //  bodySpriteObject.AddComponent<CircleCollider2D>();
        //  bodySpriteObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
@@ -128,7 +129,7 @@ public class Fighter
         weaponBodyObject.AddComponent<SpriteRenderer>();
         weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
         weaponBodyObject.AddComponent<Rigidbody2D>();
-        weaponBodyObject.GetComponent<SpriteRenderer>().color = new Color(0.5f, 0.5f, 0.5f, 1f);
+        weaponBodyObject.GetComponent<SpriteRenderer>().color = teamColor; 
 
         //     weaponBodyObject.AddComponent<CircleCollider2D>();
         //      weaponBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
@@ -136,7 +137,7 @@ public class Fighter
 
         weaponSpriteObject.AddComponent<SpriteRenderer>();
         weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
-        weaponSpriteObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
+        weaponSpriteObject.GetComponent<SpriteRenderer>().color = teamColor;
 
 
         weaponBodyObject.SetActive(false);
@@ -244,16 +245,24 @@ public class Fighter
         currentPathIndex = 1;
 
         currentPath = new List<Vector2>();
-        for (int i = 0; i < path.Count; i++)
-            currentPath.Add(mapPositionMatrix[(int)path[i].x, (int)path[i].y]);
+        for (int i = 1; i < path.Count; i++)
+        {
+            currentPath.Add(mapPositionMatrix[(int)(path[i].x), (int)(path[i].y)]);
+        }
     }
 
     public void UpdateWalkingPath()
     {
         currentPathIndex++;
-        if (currentPathIndex >= currentPath.Count)
+
+        if (currentPathIndex >= currentPath.Count && wagingWar == true) 
+        {
+            currentPathIndex--; 
+        }
+        else if (currentPathIndex >= currentPath.Count)
         {
             autoWalking = false;
+            currentPathIndex = 0; 
         }
         else
         {
@@ -329,26 +338,33 @@ public class Fighter
             {
                 rangeToTarget = (currentTarget.GetPosition() - GetPosition()).magnitude; 
             }
-
+            //Debug.Log("rangetoTarget=" + rangeToTarget + "norm="+norm); 
 
             float rand = Random.Range(0.35f, 0.4f);
-            float rand2 = Random.Range(0.01f, 0.06f);
+            float rand2 = Random.Range(0.01f, 0.02f);
 
-            if (((currentPathIndex >= currentPath.Count - 1 && norm < rand) && rangeToTarget < weaponRange))//
+            if ((rangeToTarget < weaponRange))
             {
                 OnAttack();
                 autoWalking = false;
             }
-            else if (norm > rand2)
+            
+            else if(norm > 0.02f)
             {
                 UpdateRotation((int)Vector2.SignedAngle(Vector2.up, directionVector));
                 UpdatePosition(directionVector*speed);
                 UpdateWalkingSprite((int)moveIndex++ % nWalkingSprites);
-            }
+
+            }      
+            
             else
             {
-                UpdateWalkingPath();
+
+               UpdateWalkingPath();
+
+
             }
+
         }
     }
 

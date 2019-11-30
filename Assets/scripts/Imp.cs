@@ -32,7 +32,7 @@ public class Imp {
     Vector2 destinationVector;
     Vector2 directionVector;
     bool autoWalking;
-    List<Vector2> currentPath;
+    public List<Vector2> currentPath;
 
     int currentPathIndex = 0;
 
@@ -40,10 +40,15 @@ public class Imp {
     string taggedTileName = ""; 
     int tileAttackCount = 0;
     TileBehavior tileBehavior;
-    Tile currentTile; 
+    Tile currentTile;
+
+    public bool movingToItem = false;
+    public GameObject item; 
+
 
     int attackingSoundIndex = 8;
-    int hitCount = 0; 
+    int hitCount = 0;
+
 
     public Imp(Vector2 startingPosition)
     {
@@ -69,34 +74,23 @@ public class Imp {
 
         bodyWeaponObject.AddComponent<SpriteRenderer>();
         bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
-      //  bodyWeaponObject.AddComponent<PolygonCollider2D>();
-       // bodyWeaponObject.GetComponent<PolygonCollider2D>().sharedMaterial = physicsMaterial;
         bodyWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
 
         bodySpriteObject.AddComponent<SpriteRenderer>();
         bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
         bodySpriteObject.AddComponent<Rigidbody2D>();
-      //  bodySpriteObject.AddComponent<PolygonCollider2D>();
-      //  bodySpriteObject.GetComponent<PolygonCollider2D>().sharedMaterial = physicsMaterial;
 
         bodySpriteObject.AddComponent<Hit>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 0f);
+        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
 
         bodyWeaponObject.transform.parent = bodySpriteObject.transform;
         bodySpriteObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
 
-       // Physics2D.IgnoreCollision(bodySpriteObject.GetComponent<PolygonCollider2D>(), bodyWeaponObject.GetComponent<PolygonCollider2D>(), true);
-
-      //  allColliders = new List<PolygonCollider2D>(); 
-      //  allColliders.Add(bodySpriteObject.GetComponent<PolygonCollider2D>());
-      //  allColliders.Add(bodyWeaponObject.GetComponent<PolygonCollider2D>());
-
         weaponBodyObject.AddComponent<SpriteRenderer>();
         weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
+        weaponBodyObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f); 
         weaponBodyObject.AddComponent<Rigidbody2D>();
-      //  weaponBodyObject.AddComponent<PolygonCollider2D>();
-      //  weaponBodyObject.GetComponent<PolygonCollider2D>().sharedMaterial = physicsMaterial;
-
+ 
         weaponSpriteObject.AddComponent<SpriteRenderer>();
         weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
         weaponSpriteObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
@@ -107,36 +101,13 @@ public class Imp {
         weaponSpriteObject.transform.parent = weaponBodyObject.transform;
         weaponBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
 
-      //  Physics2D.IgnoreCollision(weaponBodyObject.GetComponent<PolygonCollider2D>(), weaponBodyObject.GetComponent<PolygonCollider2D>(), true);
-
-     //   allColliders.Add(weaponBodyObject.GetComponent<PolygonCollider2D>());
-     //   allColliders.Add(weaponBodyObject.GetComponent<PolygonCollider2D>());
-
-
         weaponColliders = new PolygonCollider2D[nAttackSprites];
         for (int i = 0; i < nAttackSprites; i++)
         {
             weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[i];
-          //  PolygonCollider2D collider = weaponSpriteObject.AddComponent<PolygonCollider2D>();
-           // collider.sharedMaterial = physicsMaterial;
-         //   weaponColliders[i] = collider;
         }
-
-
-
-
     }
 
-    /*
-    public void IgnoreCollisionsWithOtherCharacter(Character other)
-    {
-        foreach (PolygonCollider2D collider in allColliders)
-            foreach (PolygonCollider2D otherCollider in other.allColliders)
-                Physics2D.IgnoreCollision(collider, otherCollider, true); 
-
-
-    }
-    */
     public void InitiateTileMove()
     {
         movingToToggled = true;
@@ -151,7 +122,7 @@ public class Imp {
         this.currentTile = currentTile; 
 
         Vector2 currentPosition = bodySpriteObject.transform.position;
-        Vector2 tilePosition = mapPositionMatrix[(int)path[1].x, (int)path[1].y];
+        Vector2 tilePosition = mapPositionMatrix[(int)path[0].x, (int)path[0].y];
         Vector2 directionToTile = (tilePosition - currentPosition).normalized;
 
         autoWalking = true;
@@ -198,7 +169,21 @@ public class Imp {
 
     public void CheckForMoreTagged()
     {
-        tileBehavior.UpdateDestroyedAndRequestAnother(taggedTileName, bodyWeaponObject.transform.position); 
+        bool another = tileBehavior.UpdateDestroyedAndRequestAnother(taggedTileName, bodyWeaponObject.transform.position);
+
+        if (!another)
+        {
+            if(Level_01.goldNotPickedUp.Count>0)
+            {
+                Debug.Log("collecting gold now, count=" + Level_01.goldNotPickedUp.Count);
+                int[] goldLocation = Level_01.goldNotPickedUp[Level_01.goldNotPickedUp.Count - 1];
+                
+                tileBehavior.StartPath(goldLocation);
+                item = Level_01.golds[Level_01.goldNotPickedUpInds[Level_01.goldNotPickedUpInds.Count-1]]; 
+                movingToItem = true; 
+
+            }
+        }
     }
 
     public void Update()
@@ -244,9 +229,21 @@ public class Imp {
 
             if (currentPathIndex >= currentPath.Count - 1 && movingToToggled == true && norm < rand)
             {
-                OnAttack(); 
-                autoWalking = false; 
+                OnAttack();
+                autoWalking = false;
             }
+            else if (movingToItem == true && item.activeInHierarchy == false) //another imp got to it first
+            {
+              //  Debug.Log("aw shucks");
+                CheckForMoreTagged(); 
+
+            }
+            else if (currentPathIndex >= currentPath.Count - 1 && movingToItem == true && norm < rand)
+            {
+                OnPickup();
+                movingToItem = false;
+            }
+    
             else if (norm > rand2)
             {
                 UpdateRotation((int)Vector2.SignedAngle(Vector2.up, directionVector));
@@ -255,7 +252,7 @@ public class Imp {
             }
             else
             {
-                UpdateWalkingPath();  
+                UpdateWalkingPath();
             }
         }
     }
@@ -288,10 +285,18 @@ public class Imp {
         weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
     }
 
+    public void OnPickup() 
+    {
+        Debug.Log("picking up gold");
+        item.SetActive(false);
+        Level_01.goldNotPickedUp.RemoveAt(Level_01.goldNotPickedUp.Count - 1);
+        Level_01.goldNotPickedUpInds.RemoveAt(Level_01.goldNotPickedUpInds.Count - 1); 
+
+    }
+
+
     public void OnAttack()
     {
-        //Main.audioSource.PlayOneShot(Main.tin, 1f);
-
         attacking = true; 
 
         bodyWeaponObject.SetActive(false);
@@ -310,15 +315,6 @@ public class Imp {
     {
         weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[(int)attackIndex% nAttackSprites];
         weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[(int)attackIndex% nAttackSprites];
-
-        /*
-        for (int i = 0; i < weaponColliders.Length; i++)
-        {
-            if (i == (int)attackIndex % nAttackSprites)
-                weaponColliders[i].enabled = true;
-            else weaponColliders[i].enabled = false; 
-        }
-        */
     }
 
     public void EndAttack()
@@ -347,5 +343,7 @@ public class Imp {
         return bodySpriteObject.transform.position; 
 
     }
+
+  
 
 }

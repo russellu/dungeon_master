@@ -6,17 +6,23 @@ public class Level_01
 {
     static Vector2[,] mapPositionMatrix;
     static CreatureManager creatureManager;
-    static Portal portal; 
+    static Portal portal;
+    static List<int[]> goldInds;
+    static List<int[]> stoneInds;
+    public static List<int[]> goldNotPickedUp = new List<int[]>();
+    public static List<GameObject> golds = new List<GameObject>();
+    public static List<int> goldNotPickedUpInds = new List<int>(); 
 
     public static float[,,] Init(Vector2[,] mapPositionMatrix, CreatureManager creatureManager) {
         Level_01.mapPositionMatrix = mapPositionMatrix;
         Level_01.creatureManager = creatureManager; 
 
-
         Sprite mapOutline = Resources.Load<Sprite>("terrains/levels/level_02");
         float[,,] mapMarkers = new float[64, 64,3];
-        List<int[]> goldInds = new List<int[]>();
+        goldInds = new List<int[]>();
+        stoneInds = new List<int[]>(); 
         int[] portalLocation; 
+
         for (int i = 0; i < 64; i++)
             for (int j = 0; j < 64; j++) 
             {
@@ -41,14 +47,22 @@ public class Level_01
                     portalLocation = new int[] { i, j };
                     Portal.Init(1, portalLocation, mapPositionMatrix);
                 }
-                else if (red == 255 && green == 242 && blue == 0)
+                else if (red == 255 && green == 242 && blue == 0) //gold
                 {
-                    goldInds.Add(new int[] {i,j});
+                    goldInds.Add(new int[] { i, j });
                 }
-
+                else if (red == 185 && green == 122 && blue == 87)  //stone
+                {
+                    stoneInds.Add(new int[] { i, j });
+                }
+                else if (red == 0 && green == 162 && blue == 232) 
+                {
+                    Smelter.Init(new int[] { i, j }, mapPositionMatrix); 
+                }
             }
 
         CreateGold(goldInds);
+        CreateStone(stoneInds); 
 
         return mapMarkers; 
 
@@ -62,8 +76,22 @@ public class Level_01
     public static void CheckUnveiled(int x, int y) {
 
         Portal.CheckUnveiled(x, y);
+        CheckGoldUnveiled(x, y); 
+    }
 
-
+    public static void CheckGoldUnveiled(int x, int y) 
+    {
+        for (int i = 0; i < goldInds.Count; i++) 
+        {
+            if (x == goldInds[i][0] && y == goldInds[i][1]) 
+            {
+                //Debug.Log("gold unveiled!");
+                Main.audioSource.PlayOneShot(Main.goldFalling,10);
+                goldNotPickedUp.Add(new int[]{x,y});
+                goldNotPickedUpInds.Add(i); 
+                
+            }
+        }
     }
 
     public static void CreateGold(List<int[]> goldInds) {
@@ -76,15 +104,33 @@ public class Level_01
             GameObject gold = new GameObject("gold: " + goldIndsX + "," + goldIndsY);
             gold.AddComponent<SpriteRenderer>();
             gold.GetComponent<SpriteRenderer>().sprite = goldSprite;
+            Color tmp = gold.GetComponent<SpriteRenderer>().color;
+            tmp.a = 0.85f;
+            gold.GetComponent<SpriteRenderer>().color = tmp;
             gold.transform.position = new Vector3(
                 mapPositionMatrix[goldIndsX, goldIndsY].x, mapPositionMatrix[goldIndsX, goldIndsY].y, -2.5f);
-           // Debug.Log("creating Gold" + goldInds.Count + "goldx =" + goldIndsX + "goldy=" + goldIndsY + "posx=");
 
+            golds.Add(gold); 
         }
-
     }
 
-
+    public static void CreateStone(List<int[]> stoneInds)
+    {
+        for (int i = 0; i < stoneInds.Count; i++)
+        {
+            int stoneIndsX = stoneInds[i][0];
+            int stoneIndsY = stoneInds[i][1];
+            Sprite stoneSprite = Resources.Load<Sprite>("terrains/golds/stone_01");
+            GameObject stone = new GameObject("stone: " + stoneIndsX + "," + stoneIndsY);
+            stone.AddComponent<SpriteRenderer>();
+            stone.GetComponent<SpriteRenderer>().sprite = stoneSprite;
+            Color tmp = stone.GetComponent<SpriteRenderer>().color;
+            tmp.a = 0.5f;
+            stone.GetComponent<SpriteRenderer>().color = tmp; 
+            stone.transform.position = new Vector3(
+                mapPositionMatrix[stoneIndsX, stoneIndsY].x, mapPositionMatrix[stoneIndsX, stoneIndsY].y, -2.5f);
+        }
+    }
 
 
 
