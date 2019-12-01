@@ -120,14 +120,16 @@ public class TileBehavior
     }
 
 
-    public void StartPath(int[] end)
+    public void StartPath(Imp imp, int[] end)
     {
 
-        List<Imp> idleImps = creatureManager.GetIdleImps();
+//        List<Imp> idleImps = creatureManager.GetIdleImps();
 
-        foreach (Imp imp in idleImps)
-        {
+ //       foreach (Imp imp in idleImps)
+ //       {
             int[] start = GetTileIndex(imp.GetPosition());
+             Debug.Log("END=" + end[0] + " " + end[1]);
+        
 
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
             /*
@@ -138,7 +140,7 @@ public class TileBehavior
             }
             */
             imp.SetupWalkingPath(path, mapPositionMatrix, "", this, tagTileObjects[end[0],end[1]]);
-        }
+ //       }
     }
 
     public void StartPathToTagged(int[] end, string gameObjectName)
@@ -152,7 +154,7 @@ public class TileBehavior
             int[] start = GetTileIndex(imp.GetPosition());
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
 
-            if (imp.movingToToggled == false)
+            if (imp.movingToToggled == false && path.Count > 0)
             {
                 imp.InitiateTileMove();
                 imp.SetupWalkingPath(path, mapPositionMatrix, gameObjectName, this, tagTileObjects[end[0], end[1]]);
@@ -581,8 +583,11 @@ public class TileBehavior
 
     public void DegradeTileAlpha(string taggedTileName, int hitCount)
     {
-        GameObject obj = accessibleTagged[taggedTileName];
-        obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
+        if (accessibleTagged.ContainsKey(taggedTileName))
+        {
+            GameObject obj = accessibleTagged[taggedTileName];
+            obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
+        }
     }
 
     public int[] GetTileIndex(Vector3 pointMain)

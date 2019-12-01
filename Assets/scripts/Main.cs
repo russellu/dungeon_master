@@ -16,7 +16,9 @@ public class Main : MonoBehaviour
     public static AudioClip stab;
     public static AudioClip portal;
     public static AudioClip gruntSpawn;
-    public static AudioClip goldFalling; 
+    public static AudioClip goldFalling;
+    public static AudioClip goldDeposit;
+    public static AudioClip pickupGold; 
 
     TileBehavior tileBehavior;
     RoomPathFinder roomPathFinder;
@@ -45,6 +47,8 @@ public class Main : MonoBehaviour
         portal = Resources.Load<AudioClip>("audios/portal");
         gruntSpawn = Resources.Load<AudioClip>("audios/grunt_spawn");
         goldFalling = Resources.Load<AudioClip>("audios/drop_gold");
+        goldDeposit = Resources.Load<AudioClip>("audios/deposit_gold");
+        pickupGold = Resources.Load<AudioClip>("audios/pickup_gold"); 
 
 
         creatureManager = new CreatureManager();

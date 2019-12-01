@@ -42,9 +42,11 @@ public class Imp {
     TileBehavior tileBehavior;
     Tile currentTile;
 
-    public bool movingToItem = false;
-    public GameObject item; 
-
+    bool movingToItem = false;
+    int[] itemLocation; 
+    GameObject currentItemSeeking;
+    GameObject currentItemHeld;
+    string currentObjective; 
 
     int attackingSoundIndex = 8;
     int hitCount = 0;
@@ -173,14 +175,21 @@ public class Imp {
 
         if (!another)
         {
-            if(Level_01.goldNotPickedUp.Count>0)
+            if (Level_01.goldsNotPickedUp.Count > 0 && currentObjective != "drop_off_gold")
             {
-                Debug.Log("collecting gold now, count=" + Level_01.goldNotPickedUp.Count);
-                int[] goldLocation = Level_01.goldNotPickedUp[Level_01.goldNotPickedUp.Count - 1];
-                
-                tileBehavior.StartPath(goldLocation);
-                item = Level_01.golds[Level_01.goldNotPickedUpInds[Level_01.goldNotPickedUpInds.Count-1]]; 
+                Debug.Log("collecting gold now, count=" + Level_01.goldsNotPickedUp.Count);
+                currentObjective = "pick_up_gold"; 
+                int[] goldLocation = Level_01.goldLocsNotPickedUp[Level_01.goldLocsNotPickedUp.Count - 1];
+                tileBehavior.StartPath(this, goldLocation);
+                currentItemSeeking = Level_01.golds[Level_01.goldNotPickedUpInds[Level_01.goldNotPickedUpInds.Count - 1]];
+                movingToItem = true;
+            }
+            else if (currentObjective == "drop_off_gold")//other conditions
+            {
+                int[] smelterLocation = Smelter.smelterLocations[0];
+                tileBehavior.StartPath(this, smelterLocation);
                 movingToItem = true; 
+
 
             }
         }
@@ -191,9 +200,7 @@ public class Imp {
         if (attacking == true)
         {
             ContinueAttack();
-
             int currentAttackIndex = (int)attackIndex++ % nAttackSprites;
-
             UpdateAttackingSprite(currentAttackIndex);
 
             if (currentAttackIndex == attackingSoundIndex && !currentTile.IsDestroyed())
@@ -232,18 +239,16 @@ public class Imp {
                 OnAttack();
                 autoWalking = false;
             }
-            else if (movingToItem == true && item.activeInHierarchy == false) //another imp got to it first
+            else if (movingToItem == true && currentItemSeeking.activeInHierarchy == false) //another imp got to it first
             {
-              //  Debug.Log("aw shucks");
-                CheckForMoreTagged(); 
-
-            }
-            else if (currentPathIndex >= currentPath.Count - 1 && movingToItem == true && norm < rand)
-            {
-                OnPickup();
                 movingToItem = false;
+                CheckForMoreTagged();
             }
-    
+            else if (currentPathIndex >= currentPath.Count - 1 && movingToItem == true && norm < 0.2)//&&
+            {
+                OnObjective();
+                CheckForMoreTagged();
+            }
             else if (norm > rand2)
             {
                 UpdateRotation((int)Vector2.SignedAngle(Vector2.up, directionVector));
@@ -285,15 +290,28 @@ public class Imp {
         weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
     }
 
-    public void OnPickup() 
+    public void OnObjective() 
     {
-        Debug.Log("picking up gold");
-        item.SetActive(false);
-        Level_01.goldNotPickedUp.RemoveAt(Level_01.goldNotPickedUp.Count - 1);
-        Level_01.goldNotPickedUpInds.RemoveAt(Level_01.goldNotPickedUpInds.Count - 1); 
-
+        //Debug.Log("picking up gold");
+        if (currentObjective == "pick_up_gold")
+        {
+            Level_01.RemoveGold(currentItemSeeking);
+            currentObjective = "drop_off_gold";
+            currentItemSeeking = Smelter.smelters[0];
+            Main.audioSource.PlayOneShot(Main.pickupGold,2); 
+        }
+        else if (currentObjective == "drop_off_gold")
+        {
+            Debug.Log("dropping off gold");
+            currentObjective = "";
+            Main.audioSource.PlayOneShot(Main.goldDeposit,2); 
+        }
     }
 
+    public void ClearObjective() 
+    {
+    
+    }
 
     public void OnAttack()
     {

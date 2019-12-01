@@ -9,9 +9,10 @@ public class Level_01
     static Portal portal;
     static List<int[]> goldInds;
     static List<int[]> stoneInds;
-    public static List<int[]> goldNotPickedUp = new List<int[]>();
+    public static List<int[]> goldLocsNotPickedUp = new List<int[]>();
     public static List<GameObject> golds = new List<GameObject>();
-    public static List<int> goldNotPickedUpInds = new List<int>(); 
+    public static List<int> goldNotPickedUpInds = new List<int>();
+    public static List<GameObject> goldsNotPickedUp = new List<GameObject>(); 
 
     public static float[,,] Init(Vector2[,] mapPositionMatrix, CreatureManager creatureManager) {
         Level_01.mapPositionMatrix = mapPositionMatrix;
@@ -68,6 +69,17 @@ public class Level_01
 
     }
 
+    public static void RemoveGold(GameObject goldObject)
+    {
+        int goldIndex = goldsNotPickedUp.IndexOf(goldObject);
+        Debug.Log("removing gold, index=" + goldIndex);
+
+        goldNotPickedUpInds.RemoveAt(goldIndex);
+        goldsNotPickedUp.RemoveAt(goldIndex);
+        goldLocsNotPickedUp.RemoveAt(goldIndex); 
+        goldObject.SetActive(false);
+    }
+
     public static void Update(float deltaTime) {
 
         Portal.Update(deltaTime, creatureManager); 
@@ -83,11 +95,11 @@ public class Level_01
     {
         for (int i = 0; i < goldInds.Count; i++) 
         {
-            if (x == goldInds[i][0] && y == goldInds[i][1]) 
+            if (x == goldInds[i][0] && y == goldInds[i][1]) //&& !goldsNotPickedUp.Contains(golds[i])
             {
-                //Debug.Log("gold unveiled!");
                 Main.audioSource.PlayOneShot(Main.goldFalling,10);
-                goldNotPickedUp.Add(new int[]{x,y});
+                goldsNotPickedUp.Add(golds[i]); 
+                goldLocsNotPickedUp.Add(new int[]{x,y});
                 goldNotPickedUpInds.Add(i); 
                 
             }

@@ -5,8 +5,8 @@ using UnityEngine;
 public class Smelter 
 {
 
-    static List<GameObject> smelters = new List<GameObject>();
-    static List<int[]> smelterLocations = new List<int[]>(); 
+    public static List<GameObject> smelters = new List<GameObject>();
+    public static List<int[]> smelterLocations = new List<int[]>(); 
     static Vector2[,] mapPositionMatrix; 
 
     public static void Init(int[] smelterLoc, Vector2[,] mapPosMat) {
