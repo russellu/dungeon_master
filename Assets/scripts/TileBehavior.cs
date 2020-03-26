@@ -9,10 +9,12 @@ public class TileBehavior
     GameObject strawObject;
     GameObject rockObject;
 
-    Sprite[] strawTiles;
-    Sprite[] rockTiles;
+    //Sprite[] strawTiles;
+    //Sprite[] rockTiles;
 
-    Sprite[] crackSprites; 
+    Sprite[] crackSprites;
+    Sprite[] claimTileSprites;
+    Sprite[] dirtSprites;
 
     Sprite strawFull;
     Sprite rockFull;
@@ -23,9 +25,11 @@ public class TileBehavior
     int[,] mapIndices;
     public bool[,] mapUnveiled;
     bool[,] mapTagged;
+    bool[,] toBeClaimed; 
     Tile[,] tagTileObjects;
     GameObject[,] borderTileObjects;
     GameObject[,] unveiledTileObjects;
+    public Queue<int[]> toBeClaimedQueue; 
 
     public List<int[]> unveiledIndexList = new List<int[]>(); 
 
@@ -48,9 +52,6 @@ public class TileBehavior
     Sprite leftRightBotAlphaInterface;
     Sprite leftRightTopBotAlphaInterface;
 
-    //public List<int[]> accessibleTagged;
-    //public List<int[]> inaccessibleTagged;
-
     public Dictionary<string, GameObject> accessibleTagged;
     public Dictionary<string, GameObject> inaccessibleTagged;
 
@@ -61,23 +62,25 @@ public class TileBehavior
 
     Main main;
     CreatureManager creatureManager;
-    
-    //BaseGrid searchGrid; 
+    public LevelState levelState; 
+
+    float[,,] mapDesignTileValues;
 
     public TileBehavior(Main main, CreatureManager creatureManager)
     {
         this.main = main;
         this.creatureManager = creatureManager;
+        levelState = new LevelState(main, this); 
 
-     
+        Debug.Log("loading tile behavior grid_lvl");
         rockObject = new GameObject();
-        strawTiles = Resources.LoadAll<Sprite>("terrains/cropstraw");
-        rockTiles = Resources.LoadAll<Sprite>("terrains/croprock");
+        //strawTiles = Resources.LoadAll<Sprite>("terrains/croprock");
+        //rockTiles = Resources.LoadAll<Sprite>("terrains/croprock");
 
-        rockFull = Resources.Load<Sprite>("terrains/croprock_full");
+        rockFull = Resources.Load<Sprite>("terrains/gold_lvl_04_full");
         rockObject.AddComponent<SpriteRenderer>();
         rockObject.GetComponent<SpriteRenderer>().sprite = rockFull;
-
+        Debug.Log("done loading tile behavior grid_lvl"); 
         mapBounds = rockObject.GetComponent<SpriteRenderer>().sprite.bounds;
 
         accessibleTagged = new Dictionary<string, GameObject>();
@@ -86,61 +89,40 @@ public class TileBehavior
         accessibleKeys = new List<string>();
         inaccessibleKeys = new List<string>();
 
-        unveiledIndexList = new List<int[]>(); 
+        unveiledIndexList = new List<int[]>();
 
-        crackSprites = new Sprite[4]; 
+        crackSprites = new Sprite[4];
         crackSprites[0] = Resources.Load<Sprite>("terrains/cracks/trans_crack_01");
         crackSprites[1] = Resources.Load<Sprite>("terrains/cracks/trans_crack_02");
         crackSprites[2] = Resources.Load<Sprite>("terrains/cracks/trans_crack_03");
         crackSprites[3] = Resources.Load<Sprite>("terrains/cracks/trans_crack_04");
 
-
+        claimTileSprites = Resources.LoadAll<Sprite>("LevelItems/tiles_small");
+        dirtSprites = Resources.LoadAll<Sprite>("terrains/dirts");
 
         BuildMapPositionMatrix();
         InitAlphaInterfaceSprites();
-       // ClearSpaceInMiddle();
-        float[,,] unveilIndices = Level_01.Init(mapPositionMatrix, creatureManager);
-        for (int i = 0; i < unveilIndices.GetLength(0); i++)
-            for (int j = 0; j < unveilIndices.GetLength(0); j++)
+
+        mapDesignTileValues = Level_01.Init(mapPositionMatrix, creatureManager);
+        for (int i = 0; i < mapDesignTileValues.GetLength(0); i++)
+            for (int j = 0; j < mapDesignTileValues.GetLength(0); j++)
             {
-                if (unveilIndices[i, j,0] == 0)
-                {
-                 //   Debug.Log(mapPositionMatrix[i, j].x);
-                 //   Debug.Log("min y" + mapPositionMatrix[0, 0].y);
-                 //   Debug.Log("min x" + mapPositionMatrix[0, 0].x);
-
-                    if (i>1 && j>1 && i<unveilIndices.GetLength(0)-2 && j<unveilIndices.GetLength(1)-2)
+                if (i > 1 && j > 1 && i < mapDesignTileValues.GetLength(0) - 2 && j < mapDesignTileValues.GetLength(1) - 2) //bound check
+                    if (mapDesignTileValues[i, j, 0] == 4|| mapDesignTileValues[i,j,0] ==5) // already unveiled by map design
+                    {
                         UnveilTile(new Vector3(mapPositionMatrix[i, j].x, mapPositionMatrix[i, j].y, -2));
-                }
+                    }
             }
-
-
-
-
     }
-
 
     public void StartPath(Imp imp, int[] end)
     {
-
-//        List<Imp> idleImps = creatureManager.GetIdleImps();
-
- //       foreach (Imp imp in idleImps)
- //       {
             int[] start = GetTileIndex(imp.GetPosition());
-             Debug.Log("END=" + end[0] + " " + end[1]);
-        
-
+        //Debug.Log("start = " + start[0] + "," + start[1] + " end = " + end[0] + "," + end[1]); 
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
-            /*
-            for (int i = 0; i < path.Count; i++)
-            {
-                GameObject gobj = unveiledTileObjects[(int)path[i].x, (int)path[i].y];
-                gobj.GetComponent<SpriteRenderer>().color = new Color(0.8f, .6f, 0);
-            }
-            */
+        //Debug.Log("path = " + path.Count); 
             imp.SetupWalkingPath(path, mapPositionMatrix, "", this, tagTileObjects[end[0],end[1]]);
- //       }
+
     }
 
     public void StartPathToTagged(int[] end, string gameObjectName)
@@ -153,6 +135,8 @@ public class TileBehavior
         { 
             int[] start = GetTileIndex(imp.GetPosition());
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
+
+
 
             if (imp.movingToToggled == false && path.Count > 0)
             {
@@ -209,11 +193,12 @@ public class TileBehavior
         Vector2 spriteCenter = new Vector2(mapBounds.center.x, mapBounds.center.y);
         Vector2 spriteBounds = new Vector2(mapBounds.extents.x, mapBounds.extents.y);
 
-        int sqrtTiles = (int)Mathf.Sqrt(strawTiles.Length);
+        int sqrtTiles = 64;// (int)Mathf.Sqrt(strawTiles.Length);
 
         mapPositionMatrix = new Vector2[sqrtTiles, sqrtTiles];
         mapIndices = new int[sqrtTiles, sqrtTiles];
         mapTagged = new bool[sqrtTiles, sqrtTiles];
+        toBeClaimed = new bool[sqrtTiles, sqrtTiles]; 
         mapUnveiled = new bool[sqrtTiles, sqrtTiles];
         tagTileObjects = new Tile[sqrtTiles, sqrtTiles];
         borderTileObjects = new GameObject[sqrtTiles, sqrtTiles];
@@ -268,7 +253,6 @@ public class TileBehavior
             {
 
                 Main.audioSource.PlayOneShot(Main.marble, 1f);
-
 
                 GameObject taggedOject = ColorExistingTile(mapPosition, tileIndices[0], tileIndices[1]);
                 mapUnveiledOrTaggedJagged[tileIndices[1]][tileIndices[0]] = 0;
@@ -397,12 +381,26 @@ public class TileBehavior
     {
         GameObject gobj = new GameObject("tile: " + xIndex + "," + yIndex);
         gobj.AddComponent<SpriteRenderer>();
-        gobj.GetComponent<SpriteRenderer>().sprite = rockTiles[mapIndices[xIndex, yIndex]];
-        gobj.GetComponent<SpriteRenderer>().color = new Color(0, 1, 0);
+
+        gobj.GetComponent<SpriteRenderer>().sprite = claimTileSprites[3];
+            //rockTiles[mapIndices[xIndex, yIndex]];
+        gobj.GetComponent<SpriteRenderer>().color = new Color(0, 1, 0,0.2f);
         gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -1);
 
         mapTagged[xIndex, yIndex] = true;
-        tagTileObjects[xIndex, yIndex] = new Tile(gobj, 4);
+
+        float tileLife = 4; 
+        switch (mapDesignTileValues[xIndex, yIndex,0]) 
+        {
+            case (1):
+                tileLife = 1000;
+                break;
+            default:
+                tileLife = 4;
+                break; 
+        }
+
+        tagTileObjects[xIndex, yIndex] = new Tile(gobj, tileLife);
 
         return gobj; 
     }
@@ -555,7 +553,9 @@ public class TileBehavior
     public void UnveilTile(Vector3 pointMain)
     {
         int[] tileIndices = GetTileIndex(pointMain);
-      //  Debug.Log(tileIndices[0]+" "+tileIndices[1]);
+        toBeClaimed[tileIndices[0], tileIndices[1]] = true;
+        toBeClaimedQueue.Enqueue(tileIndices); 
+
         Vector2 mapPosition = mapPositionMatrix[tileIndices[0], tileIndices[1]];
 
         if (mapTagged[tileIndices[0], tileIndices[1]] == true)
@@ -584,9 +584,10 @@ public class TileBehavior
     public void DegradeTileAlpha(string taggedTileName, int hitCount)
     {
         if (accessibleTagged.ContainsKey(taggedTileName))
-        {
+        {   
             GameObject obj = accessibleTagged[taggedTileName];
-            obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
+            if(hitCount<crackSprites.Length)
+                obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
         }
     }
 
@@ -601,7 +602,7 @@ public class TileBehavior
         float relX = (x + mapBounds.extents.x) / (mapBounds.extents.x * 2);
         float relY = 1 - (y + mapBounds.extents.y) / (mapBounds.extents.y * 2);
 
-        int sqrtTiles = (int)Mathf.Sqrt(strawTiles.Length);
+        int sqrtTiles = 64;// (int)Mathf.Sqrt(strawTiles.Length);
 
         int xIndex = (int)(relX * sqrtTiles);
         int yIndex = (int)(relY * sqrtTiles);
@@ -616,7 +617,11 @@ public class TileBehavior
     {
         GameObject gobj = new GameObject("tile: " + xIndex+ "," + yIndex);
         gobj.AddComponent<SpriteRenderer>();
-        gobj.GetComponent<SpriteRenderer>().sprite = strawTiles[mapIndices[xIndex, yIndex]];
+        //gobj.GetComponent<SpriteRenderer>().sprite = strawTiles[mapIndices[xIndex, yIndex]];
+        //update claimed sprite
+        int random = UnityEngine.Random.Range(0, 64); 
+        gobj.GetComponent<SpriteRenderer>().sprite = dirtSprites[random];
+
         gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -2);
 
         unveiledTileObjects[xIndex, yIndex] = gobj; 

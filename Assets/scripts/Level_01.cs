@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI; 
 
 public class Level_01
 {
@@ -12,13 +13,22 @@ public class Level_01
     public static List<int[]> goldLocsNotPickedUp = new List<int[]>();
     public static List<GameObject> golds = new List<GameObject>();
     public static List<int> goldNotPickedUpInds = new List<int>();
-    public static List<GameObject> goldsNotPickedUp = new List<GameObject>(); 
+    public static List<GameObject> goldsNotPickedUp = new List<GameObject>();
+    public static int gold = 0;
+
 
     public static float[,,] Init(Vector2[,] mapPositionMatrix, CreatureManager creatureManager) {
-        Level_01.mapPositionMatrix = mapPositionMatrix;
-        Level_01.creatureManager = creatureManager; 
 
-        Sprite mapOutline = Resources.Load<Sprite>("terrains/levels/level_02");
+     
+
+
+        Level_01.mapPositionMatrix = mapPositionMatrix;
+        Level_01.creatureManager = creatureManager;
+
+        Debug.Log("loading GRID_LVL_04"); 
+        Sprite mapOutline = Resources.Load<Sprite>("terrains/levels/grid_lvl_04");
+        Debug.Log("loaded GRID_LVL_04");
+
         float[,,] mapMarkers = new float[64, 64,3];
         goldInds = new List<int[]>();
         stoneInds = new List<int[]>(); 
@@ -32,13 +42,14 @@ public class Level_01
                 float red = (current.r * 255.0f);
                 float green = (current.g * 255.0f);
                 float blue = (current.b * 255.0f);
-                mapMarkers[i,j,0] = red;
+                mapMarkers[i,j, 0] = red;
                 mapMarkers[i, j, 1] = green;
                 mapMarkers[i, j, 2] = blue;
+
                 //gold 255 242 0
                 //rock 185 122 87
                 //enemy portal 237 28 36
-                if (red == 34 && green == 177 && blue == 76) // good portal
+                if (red == 6 && green == 6 && blue == 6) // good portal
                 {
                     portalLocation = new int[] {i,j};
                     Portal.Init(0,portalLocation, mapPositionMatrix); 
@@ -48,15 +59,17 @@ public class Level_01
                     portalLocation = new int[] { i, j };
                     Portal.Init(1, portalLocation, mapPositionMatrix);
                 }
-                else if (red == 255 && green == 242 && blue == 0) //gold
+                else if (red == 3 && green == 3 && blue == 3) //gold
                 {
                     goldInds.Add(new int[] { i, j });
                 }
-                else if (red == 185 && green == 122 && blue == 87)  //stone
+                else if (red == 1 && green == 1 && blue == 1)  //stone
                 {
+                    Debug.Log("adding stone");
                     stoneInds.Add(new int[] { i, j });
+                    mapMarkers[i, j, 0] = 1; 
                 }
-                else if (red == 0 && green == 162 && blue == 232) 
+                else if (red == 5 && green == 5 && blue == 5)//smelter 
                 {
                     Smelter.Init(new int[] { i, j }, mapPositionMatrix); 
                 }
@@ -117,7 +130,7 @@ public class Level_01
             gold.AddComponent<SpriteRenderer>();
             gold.GetComponent<SpriteRenderer>().sprite = goldSprite;
             Color tmp = gold.GetComponent<SpriteRenderer>().color;
-            tmp.a = 0.85f;
+            tmp.a = 0.45f;
             gold.GetComponent<SpriteRenderer>().color = tmp;
             gold.transform.position = new Vector3(
                 mapPositionMatrix[goldIndsX, goldIndsY].x, mapPositionMatrix[goldIndsX, goldIndsY].y, -2.5f);
@@ -137,14 +150,10 @@ public class Level_01
             stone.AddComponent<SpriteRenderer>();
             stone.GetComponent<SpriteRenderer>().sprite = stoneSprite;
             Color tmp = stone.GetComponent<SpriteRenderer>().color;
-            tmp.a = 0.5f;
+            tmp.a = 0.15f; tmp.r = 0.1f; 
             stone.GetComponent<SpriteRenderer>().color = tmp; 
             stone.transform.position = new Vector3(
                 mapPositionMatrix[stoneIndsX, stoneIndsY].x, mapPositionMatrix[stoneIndsX, stoneIndsY].y, -2.5f);
         }
     }
-
-
-
-
 }

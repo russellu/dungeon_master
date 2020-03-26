@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
-using System; 
+using System;
+using UnityEngine.UI; 
 
 
 public class Main : MonoBehaviour
@@ -18,7 +19,11 @@ public class Main : MonoBehaviour
     public static AudioClip gruntSpawn;
     public static AudioClip goldFalling;
     public static AudioClip goldDeposit;
-    public static AudioClip pickupGold; 
+    public static AudioClip pickupGold;
+
+    public Text goldTxt;
+    public int goldCount = 0; 
+    public static Text nCreaturesTxt; 
 
     TileBehavior tileBehavior;
     RoomPathFinder roomPathFinder;
@@ -36,8 +41,16 @@ public class Main : MonoBehaviour
     public GameObject smallSphere;
     List<GameObject> spheres;
 
+    private static float prevPinchDist = 0;
+
+    GameObject controlSphere;
+    private bool scrolling = false;
+    private float prevDown = 0;
+    private Vector2 currentScrollPos; 
+
     void Start()
     {
+        Debug.Log("loading audio grid_lvl"); 
         mainCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
         audioSource = mainCamera.GetComponent<AudioSource>();
         marble = Resources.Load<AudioClip>("audios/marble");
@@ -48,14 +61,22 @@ public class Main : MonoBehaviour
         gruntSpawn = Resources.Load<AudioClip>("audios/grunt_spawn");
         goldFalling = Resources.Load<AudioClip>("audios/drop_gold");
         goldDeposit = Resources.Load<AudioClip>("audios/deposit_gold");
-        pickupGold = Resources.Load<AudioClip>("audios/pickup_gold"); 
+        pickupGold = Resources.Load<AudioClip>("audios/pickup_gold");
+        Debug.Log("DONE loading audio grid_lvl");
 
+
+        // controlSphere = GameObject.Find("Sphere");
+        Vector3 botRight = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width - Screen.width / 10, 
+                            Screen.height / 10,0));
+      //  controlSphere.transform.position = new Vector3(botRight.x,botRight.y,-4);
 
         creatureManager = new CreatureManager();
         creatureManager.main = this; 
 
         tileBehavior = new TileBehavior(this, creatureManager);
         creatureManager.SetTileBehavior(tileBehavior);
+
+        mainCamera.transform.Translate(new Vector3(2.4f, -2.6f, 0));
 
         /*
         Physics2D.gravity = Vector2.zero;
@@ -74,13 +95,82 @@ public class Main : MonoBehaviour
     void Update()
     {
 
-        if (Input.GetMouseButtonDown(0))
+        if (Input.touchCount >= 2)
+        {
+            
+            Vector2 touch0, touch1;
+            float distance;
+            touch0 = Input.GetTouch(0).position;
+            touch1 = Input.GetTouch(1).position;
+            distance = Vector2.Distance(touch0, touch1);
+            if (prevPinchDist != 0 && distance < prevPinchDist)
+            {
+                Camera.current.orthographicSize += 0.05f;
+            }
+            else if (prevPinchDist != 0 && distance > prevPinchDist)
+            {
+                Camera.current.orthographicSize -= 0.05f;
+            }
+            Vector3 botRight = Camera.main.ScreenToWorldPoint(new Vector3(Screen.width - Screen.width / 10,
+                         Screen.height / 10, 0));
+          //  controlSphere.transform.position = new Vector3(botRight.x, botRight.y, -4);
+            prevPinchDist = distance;
+        }
+        else if (Input.GetMouseButtonDown(0) || (Input.GetMouseButton(0) && scrolling))
+        {
+            Debug.Log("pressed, y=" + Input.mousePosition.y);
+            if (Input.mousePosition.y <275 && Input.mousePosition.x > Screen.width / 2 || scrolling)
+            {
+                Vector2 mousePos = Input.mousePosition;
+                
+                if (scrolling == true)
+                {
+                    double xDist = mousePos.x - currentScrollPos.x;
+                    double yDist = mousePos.y - currentScrollPos.y;
+                    mainCamera.transform.Translate((float)xDist / 1000, (float)yDist / 1500, 0);
+                }
+                else
+                {
+                    currentScrollPos = mousePos;
+                    scrolling = true;
+                }
+            }
+            /*
+            Vector3 touchPosWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            Vector2 touchPosWorld2D = new Vector2(touchPosWorld.x, touchPosWorld.y);
+
+            double dist = Math.Sqrt(Math.Pow(touchPosWorld2D.x - controlSphere.transform.position.x, 2) +
+                Math.Pow(touchPosWorld2D.y - controlSphere.transform.position.y, 2));
+            if (dist < 0.5 || scrolling)
+            {
+                scrolling = true;
+                double yDist = touchPosWorld2D.y - controlSphere.transform.position.y;
+                double xDist = touchPosWorld2D.x - controlSphere.transform.position.x;
+
+                mainCamera.transform.Translate((float)xDist / 2, (float)yDist / 2, 0);
+                controlSphere.transform.Translate(new Vector3((float)xDist / 2, (float)yDist / 2, 0));
+            }
+            */
+        }
+        else if (Input.GetMouseButtonUp(0))
+        {
+            scrolling = false;
+        }
+
+
+        if (Input.GetKeyDown(KeyCode.Space)) 
+        {
+            creatureManager.SpawnImp(new Vector2(-0.5f,-0.5f)); 
+        }
+
+        if (Input.GetMouseButtonDown(0) && scrolling == false)
         {
             Vector3 pos = Input.mousePosition;
             Vector3 pointMain = mainCamera.ScreenToWorldPoint(pos);
             alreadyTagged = tileBehavior.TagTile(pointMain, 0);
         }
-        else if (Input.GetMouseButton(0))
+        else if (Input.GetMouseButton(0) && scrolling == false)
         {
             Vector3 pos = Input.mousePosition;
             Vector3 pointMain = mainCamera.ScreenToWorldPoint(pos);
@@ -177,6 +267,9 @@ public class Main : MonoBehaviour
         }
 
         fighter.SetupWalkingPath(allPath, tileBehavior.mapPositionMatrix);
+
+        
+
 
     }
 

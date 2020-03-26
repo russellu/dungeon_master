@@ -4,9 +4,6 @@ using UnityEngine;
 
 public class Fighter
 {
-
-
-
     Sprite[] walkingWeaponSprites;
     Sprite[] attackingBodySprites;
     Sprite[] walkingBodySprites;
@@ -16,10 +13,10 @@ public class Fighter
 
     public List<CircleCollider2D> allColliders;
 
-    GameObject bodyWeaponObject;
-    GameObject weaponBodyObject;
-    GameObject bodySpriteObject;
-    GameObject weaponSpriteObject;
+    GameObject walkingWeaponObject;
+    GameObject attackingBodyObject;
+    GameObject walkingBodyObject;
+    GameObject attackingWeaponObject;
 
     PhysicsMaterial2D physicsMaterial;
 
@@ -84,78 +81,78 @@ public class Fighter
         walkingBodySprites = Resources.LoadAll<Sprite>("players/staff_walking_body");
         attackingWeaponSprites = Resources.LoadAll<Sprite>("players/staff_attacking_weapon");
 
-        bodyWeaponObject = new GameObject();
-        weaponBodyObject = new GameObject();
-        bodySpriteObject = new GameObject();
-        weaponSpriteObject = new GameObject();
+        walkingWeaponObject = new GameObject();
+        attackingBodyObject = new GameObject();
+        walkingBodyObject = new GameObject();
+        attackingWeaponObject = new GameObject();
 
         float scalef = 0.55f;
-        bodyWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        weaponBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        bodySpriteObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        weaponSpriteObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        walkingWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        attackingBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        walkingBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        attackingWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
 
-        bodyWeaponObject.AddComponent<SpriteRenderer>();
-        bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
+        walkingWeaponObject.AddComponent<SpriteRenderer>();
+        walkingWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
 
-        // bodyWeaponObject.AddComponent<CircleCollider2D>();
-        // bodyWeaponObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
-        //bodyWeaponObject.GetComponent<CircleCollider2D>().radius = 0.08f; 
-
-
-        bodyWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
-
-        bodySpriteObject.AddComponent<SpriteRenderer>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
-        bodySpriteObject.AddComponent<Rigidbody2D>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().color = teamColor;
-
-       //  bodySpriteObject.AddComponent<CircleCollider2D>();
-       //  bodySpriteObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
-       //  bodySpriteObject.GetComponent<CircleCollider2D>().radius = 0.085f; 
+        // walkingWeaponObject.AddComponent<CircleCollider2D>();
+        // walkingWeaponObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
+        //walkingWeaponObject.GetComponent<CircleCollider2D>().radius = 0.08f; 
 
 
-        bodySpriteObject.AddComponent<Hit>();
+        walkingWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
 
-        bodyWeaponObject.transform.parent = bodySpriteObject.transform;
-        bodySpriteObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        walkingBodyObject.AddComponent<SpriteRenderer>();
+        walkingBodyObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
+        walkingBodyObject.AddComponent<Rigidbody2D>();
+        walkingBodyObject.GetComponent<SpriteRenderer>().color = teamColor;
 
-       // Physics2D.IgnoreCollision(bodySpriteObject.GetComponent<CircleCollider2D>(), bodyWeaponObject.GetComponent<CircleCollider2D>(), true);
+       //  walkingBodyObject.AddComponent<CircleCollider2D>();
+       //  walkingBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
+       //  walkingBodyObject.GetComponent<CircleCollider2D>().radius = 0.085f; 
+
+
+        walkingBodyObject.AddComponent<Hit>();
+
+        walkingWeaponObject.transform.parent = walkingBodyObject.transform;
+        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+
+       // Physics2D.IgnoreCollision(walkingBodyObject.GetComponent<CircleCollider2D>(), walkingWeaponObject.GetComponent<CircleCollider2D>(), true);
 
         //  allColliders = new List<CircleCollider2D>(); 
-        //  allColliders.Add(bodySpriteObject.GetComponent<CircleCollider2D>());
-        //  allColliders.Add(bodyWeaponObject.GetComponent<CircleCollider2D>());
+        //  allColliders.Add(walkingBodyObject.GetComponent<CircleCollider2D>());
+        //  allColliders.Add(walkingWeaponObject.GetComponent<CircleCollider2D>());
 
-        weaponBodyObject.AddComponent<SpriteRenderer>();
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
-        weaponBodyObject.AddComponent<Rigidbody2D>();
-        weaponBodyObject.GetComponent<SpriteRenderer>().color = teamColor; 
+        attackingBodyObject.AddComponent<SpriteRenderer>();
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
+        attackingBodyObject.AddComponent<Rigidbody2D>();
+        attackingBodyObject.GetComponent<SpriteRenderer>().color = teamColor; 
 
-        //     weaponBodyObject.AddComponent<CircleCollider2D>();
-        //      weaponBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
-
-
-        weaponSpriteObject.AddComponent<SpriteRenderer>();
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
-        weaponSpriteObject.GetComponent<SpriteRenderer>().color = teamColor;
+        //     attackingBodyObject.AddComponent<CircleCollider2D>();
+        //      attackingBodyObject.GetComponent<CircleCollider2D>().sharedMaterial = physicsMaterial;
 
 
-        weaponBodyObject.SetActive(false);
-        weaponSpriteObject.SetActive(false);
+        attackingWeaponObject.AddComponent<SpriteRenderer>();
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().color = teamColor;
 
-        weaponSpriteObject.transform.parent = weaponBodyObject.transform;
-        weaponBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
 
-        //  Physics2D.IgnoreCollision(weaponBodyObject.GetComponent<CircleCollider2D>(), weaponBodyObject.GetComponent<CircleCollider2D>(), true);
-        //   allColliders.Add(weaponBodyObject.GetComponent<CircleCollider2D>());
-        //   allColliders.Add(weaponBodyObject.GetComponent<CircleCollider2D>());
+        attackingBodyObject.SetActive(false);
+        attackingWeaponObject.SetActive(false);
+
+        attackingWeaponObject.transform.parent = attackingBodyObject.transform;
+        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+
+        //  Physics2D.IgnoreCollision(attackingBodyObject.GetComponent<CircleCollider2D>(), attackingBodyObject.GetComponent<CircleCollider2D>(), true);
+        //   allColliders.Add(attackingBodyObject.GetComponent<CircleCollider2D>());
+        //   allColliders.Add(attackingBodyObject.GetComponent<CircleCollider2D>());
 
         
         weaponColliders = new CircleCollider2D[nAttackSprites];
         for (int i = 0; i < nAttackSprites; i++)
         {
-            weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[i];
-         //     CircleCollider2D collider = weaponSpriteObject.AddComponent<CircleCollider2D>();
+            attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[i];
+         //     CircleCollider2D collider = attackingWeaponObject.AddComponent<CircleCollider2D>();
          //    collider.sharedMaterial = physicsMaterial;
          //      weaponColliders[i] = collider;
         }
@@ -370,54 +367,53 @@ public class Fighter
 
     public void UpdateRotation(int moveRotAngle)
     {
-        bodySpriteObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
-        weaponBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
+        walkingBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
+        attackingBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
     }
 
     public void UpdatePosition(Vector3 newPositionVector)
     {
         if ((moving == true || autoWalking == true) && attacking == false)
         {
-            bodySpriteObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
-            bodySpriteObject.transform.position += newPositionVector * 1 * Time.deltaTime;
+            walkingBodyObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
+            walkingBodyObject.transform.position += newPositionVector * 1 * Time.deltaTime;
 
-            position = bodySpriteObject.transform.position; 
+            position = walkingBodyObject.transform.position; 
         }
     }
 
     public void UpdateWalkingSprite(int spriteIndex)
     {
-        bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[spriteIndex];
-        bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[spriteIndex];
+        walkingWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[spriteIndex];
+        walkingBodyObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[spriteIndex];
     }
 
     public void UpdateAttackingSprite(int spriteIndex)
     {
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[spriteIndex];
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[spriteIndex];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
     }
 
     public void OnAttack()
     {
-
         attacking = true;
 
-        bodyWeaponObject.SetActive(false);
-        bodySpriteObject.SetActive(false);
+        walkingWeaponObject.SetActive(false);
+        walkingBodyObject.SetActive(false);
 
-        weaponBodyObject.transform.localRotation = bodySpriteObject.transform.localRotation;
-        weaponBodyObject.transform.position = GetPosition(); //getPobodySpriteObject.transform.position;
+        attackingBodyObject.transform.localRotation = walkingBodyObject.transform.localRotation;
+        attackingBodyObject.transform.position = GetPosition(); //getPowalkingBodyObject.transform.position;
 
-        weaponSpriteObject.SetActive(true);
-        weaponBodyObject.SetActive(true);
+        attackingWeaponObject.SetActive(true);
+        attackingBodyObject.SetActive(true);
 
         attackIndex = 0;
     }
 
     public void ContinueAttack()
     {
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[(int)attackIndex % nAttackSprites];
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[(int)attackIndex % nAttackSprites];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[(int)attackIndex % nAttackSprites];
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[(int)attackIndex % nAttackSprites];
 
         /*
         for (int i = 0; i < weaponColliders.Length; i++)
@@ -434,14 +430,14 @@ public class Fighter
         attacking = false;
         hitCount = 0;
 
-        bodyWeaponObject.SetActive(true);
-        bodySpriteObject.SetActive(true);
+        walkingWeaponObject.SetActive(true);
+        walkingBodyObject.SetActive(true);
 
-        weaponSpriteObject.SetActive(false);
-        weaponBodyObject.SetActive(false);
+        attackingWeaponObject.SetActive(false);
+        attackingBodyObject.SetActive(false);
 
-        bodySpriteObject.transform.localRotation = weaponBodyObject.transform.localRotation;
-        bodySpriteObject.transform.position = GetPosition();
+        walkingBodyObject.transform.localRotation = attackingBodyObject.transform.localRotation;
+        walkingBodyObject.transform.position = GetPosition();
 
     }
 
@@ -461,10 +457,10 @@ public class Fighter
         EndAttack();
         EndMovement();
         wagingWar = false; 
-        Object.Destroy(bodyWeaponObject);
-        Object.Destroy(weaponBodyObject);
-        Object.Destroy(bodySpriteObject);
-        Object.Destroy(weaponSpriteObject);
+        Object.Destroy(walkingWeaponObject);
+        Object.Destroy(attackingBodyObject);
+        Object.Destroy(walkingBodyObject);
+        Object.Destroy(attackingWeaponObject);
     }
 
 }

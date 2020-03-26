@@ -17,16 +17,16 @@ public class CreatureManager
     {
         imps = new List<Imp>();
 
-        imps.Add(new Imp(new Vector2(-.10f,0)));
-        imps.Add(new Imp(new Vector2(-.20f,0f)));
-        imps.Add(new Imp(new Vector2(-0.1f, 0.1f)));
+        imps.Add(new Imp(new Vector2(2.4f,-2.45f)));
+        imps.Add(new Imp(new Vector2(2.5f,-2.4f)));
+        imps.Add(new Imp(new Vector2(2.45f, -2.5f)));
  
 
         fightersFriendly = new List<Fighter>();
         fightersEnemy = new List<Fighter>();
 
-        float[] pos1 = new float[] { -1.8f,0.5f};
-        float[] pos2 = new float[] { -0.5f, -1f };
+        float[] pos1 = new float[] { -2.4f,-2.4f};
+        float[] pos2 = new float[] { -2.4f, -2.3f };
 
         for (int i = 0; i < 0; i++)
         {
@@ -47,6 +47,13 @@ public class CreatureManager
             fightersFriendly.Add(new Fighter(this, new Vector3(location.x, location.y, -3), polarity, .5f));
         else if(polarity==1)
             fightersEnemy.Add(new Fighter(this, new Vector3(location.x, location.y, -3), polarity, .5f));
+
+    }
+
+    public void SpawnImp(Vector2 location)
+    {
+
+        imps.Add(new Imp(location));
 
     }
 

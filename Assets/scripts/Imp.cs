@@ -13,10 +13,10 @@ public class Imp {
 
     public List<PolygonCollider2D> allColliders; 
 
-    GameObject bodyWeaponObject;
-    GameObject weaponBodyObject;
-    GameObject bodySpriteObject;
-    GameObject weaponSpriteObject;
+    GameObject walkingWeaponObject;
+    GameObject attackingBodyObject;
+    GameObject walkingBodyObject;
+    GameObject attackingWeaponObject;
 
     PhysicsMaterial2D physicsMaterial;
 
@@ -63,51 +63,53 @@ public class Imp {
         walkingBodySprites = Resources.LoadAll<Sprite>("players/staff_walking_body");
         attackingWeaponSprites = Resources.LoadAll<Sprite>("players/staff_attacking_weapon");
 
-        bodyWeaponObject = new GameObject();
-        weaponBodyObject = new GameObject();
-        bodySpriteObject = new GameObject();
-        weaponSpriteObject = new GameObject();
+        walkingWeaponObject = new GameObject();
+        attackingBodyObject = new GameObject();
+        walkingBodyObject = new GameObject();
+        attackingWeaponObject = new GameObject();
 
         float scalef = 0.45f;
-        bodyWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        weaponBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        bodySpriteObject.transform.localScale = new Vector3(scalef, scalef, 1f);
-        weaponSpriteObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        walkingWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        attackingBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        walkingBodyObject.transform.localScale = new Vector3(scalef, scalef, 1f);
+        attackingWeaponObject.transform.localScale = new Vector3(scalef, scalef, 1f);
 
-        bodyWeaponObject.AddComponent<SpriteRenderer>();
-        bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
-        bodyWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
+        walkingWeaponObject.AddComponent<SpriteRenderer>();
+        walkingWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[0];
+        walkingWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
 
-        bodySpriteObject.AddComponent<SpriteRenderer>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
-        bodySpriteObject.AddComponent<Rigidbody2D>();
+        walkingBodyObject.AddComponent<SpriteRenderer>();
+        walkingBodyObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[0];
+        walkingBodyObject.AddComponent<Rigidbody2D>();
 
-        bodySpriteObject.AddComponent<Hit>();
-        bodySpriteObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
+        walkingBodyObject.AddComponent<Hit>();
+        walkingBodyObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
 
-        bodyWeaponObject.transform.parent = bodySpriteObject.transform;
-        bodySpriteObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        walkingWeaponObject.transform.parent = walkingBodyObject.transform;
+        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
 
-        weaponBodyObject.AddComponent<SpriteRenderer>();
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
-        weaponBodyObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f); 
-        weaponBodyObject.AddComponent<Rigidbody2D>();
+        attackingBodyObject.AddComponent<SpriteRenderer>();
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
+        attackingBodyObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f); 
+        attackingBodyObject.AddComponent<Rigidbody2D>();
  
-        weaponSpriteObject.AddComponent<SpriteRenderer>();
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
-        weaponSpriteObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
+        attackingWeaponObject.AddComponent<SpriteRenderer>();
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[0];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().color = new Color(1f, 0f, 0f);
 
-        weaponBodyObject.SetActive(false);
-        weaponSpriteObject.SetActive(false);
+        attackingBodyObject.SetActive(false);
+        attackingWeaponObject.SetActive(false);
 
-        weaponSpriteObject.transform.parent = weaponBodyObject.transform;
-        weaponBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        attackingWeaponObject.transform.parent = attackingBodyObject.transform;
+        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
 
         weaponColliders = new PolygonCollider2D[nAttackSprites];
         for (int i = 0; i < nAttackSprites; i++)
         {
-            weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[i];
+            attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[i];
         }
+    
+    
     }
 
     public void InitiateTileMove()
@@ -121,9 +123,9 @@ public class Imp {
 
         this.tileBehavior = tileBehavior; 
         this.taggedTileName = taggedTileName;
-        this.currentTile = currentTile; 
-
-        Vector2 currentPosition = bodySpriteObject.transform.position;
+        this.currentTile = currentTile;
+        Debug.Log("pathx = " + path[0].x + " pathy = " + path[0].y); 
+        Vector2 currentPosition = walkingBodyObject.transform.position;
         Vector2 tilePosition = mapPositionMatrix[(int)path[0].x, (int)path[0].y];
         Vector2 directionToTile = (tilePosition - currentPosition).normalized;
 
@@ -148,12 +150,12 @@ public class Imp {
         }
         else
         {
-            Vector2 currentPosition = bodySpriteObject.transform.position;
+            Vector2 currentPosition = walkingBodyObject.transform.position;
             destinationVector = currentPath[currentPathIndex];
             directionVector = (destinationVector - currentPosition).normalized;
         }
     }
-
+    
     public void CancelMovementToTagged(string canceledTileName)
     {
         if (canceledTileName.Equals(taggedTileName))
@@ -171,7 +173,7 @@ public class Imp {
 
     public void CheckForMoreTagged()
     {
-        bool another = tileBehavior.UpdateDestroyedAndRequestAnother(taggedTileName, bodyWeaponObject.transform.position);
+        bool another = tileBehavior.UpdateDestroyedAndRequestAnother(taggedTileName, walkingWeaponObject.transform.position);
 
         if (!another)
         {
@@ -192,6 +194,18 @@ public class Imp {
 
 
             }
+            else // look for some unclaimed tiles
+            {
+                if (tileBehavior.toBeClaimedQueue.Count > 0) 
+                { 
+                
+                
+                }
+
+
+
+
+            }
         }
     }
 
@@ -205,6 +219,7 @@ public class Imp {
 
             if (currentAttackIndex == attackingSoundIndex && !currentTile.IsDestroyed())
             {
+                UpdateRotation((int)Vector2.SignedAngle(Vector2.up, currentTile.baseObject.transform.position- walkingBodyObject.transform.position));
                 Main.audioSource.PlayOneShot(Main.tin, 0.2f);
                 tileBehavior.DegradeTileAlpha(taggedTileName, hitCount++);
                 currentTile.Hit(1); 
@@ -213,7 +228,6 @@ public class Imp {
             if (movingToToggled && tileAttackCount > 0)
             {
                 tileAttackCount--;
-                UpdateRotation((int)Vector2.SignedAngle(Vector2.up, directionVector));
             }
             if (movingToToggled && currentTile.IsDestroyed())
             {
@@ -228,14 +242,15 @@ public class Imp {
         }
         else if (autoWalking == true)
         {
-            Vector2 currentPosition = bodySpriteObject.transform.position;
+            Vector2 currentPosition = walkingBodyObject.transform.position;
             float norm = (currentPosition - destinationVector).magnitude;
 
-            float rand = Random.Range(0.1f, 0.55f);
+           // float rand = Random.Range(0.1f, 0.55f);
             float rand2 = Random.Range(0.01f, 0.13f);
 
-            if (currentPathIndex >= currentPath.Count - 1 && movingToToggled == true && norm < rand)
+            if (currentPathIndex >= currentPath.Count - 1 && movingToToggled == true && norm < 0.4f)
             {
+             //   UpdateRotation((int)Vector2.SignedAngle(Vector2.up, currentTile.baseObject.transform.position - walkingBodyObject.transform.position));
                 OnAttack();
                 autoWalking = false;
             }
@@ -265,29 +280,30 @@ public class Imp {
 
     public void UpdateRotation(int moveRotAngle)
     {
-            bodySpriteObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
-            weaponBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle); 
+            walkingBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
+            attackingBodyObject.transform.rotation = Quaternion.Euler(0f, 0f, moveRotAngle);
+
     }
 
     public void UpdatePosition(Vector3 newPositionVector)
     {
         if ((moving == true || autoWalking == true) && attacking == false)
         {
-            bodySpriteObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
-            bodySpriteObject.transform.position += newPositionVector * 1 * Time.deltaTime;
+            walkingBodyObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
+            walkingBodyObject.transform.position += newPositionVector * 1 * Time.deltaTime*2;
         }
     }
 
     public void UpdateWalkingSprite(int spriteIndex)
     {
-        bodyWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[spriteIndex];
-        bodySpriteObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[spriteIndex];
+        walkingWeaponObject.GetComponent<SpriteRenderer>().sprite = walkingWeaponSprites[spriteIndex];
+        walkingBodyObject.GetComponent<SpriteRenderer>().sprite = walkingBodySprites[spriteIndex];
     }
 
     public void UpdateAttackingSprite(int spriteIndex)
     {
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[spriteIndex];
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[spriteIndex];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[spriteIndex];
     }
 
     public void OnObjective() 
@@ -304,7 +320,10 @@ public class Imp {
         {
             Debug.Log("dropping off gold");
             currentObjective = "";
-            Main.audioSource.PlayOneShot(Main.goldDeposit,2); 
+            Main.audioSource.PlayOneShot(Main.goldDeposit,2);
+            tileBehavior.levelState.updateGold(Random.Range(0,2)); 
+       //     Main.goldCount++;
+       //     Main.goldTxt.text = "Gold: " + Main.goldCount; 
         }
     }
 
@@ -317,22 +336,22 @@ public class Imp {
     {
         attacking = true; 
 
-        bodyWeaponObject.SetActive(false);
-        bodySpriteObject.SetActive(false);
+        walkingWeaponObject.SetActive(false);
+        walkingBodyObject.SetActive(false);
 
-        weaponBodyObject.transform.localRotation = bodySpriteObject.transform.localRotation;
-        weaponBodyObject.transform.position = bodySpriteObject.transform.position; 
+        attackingBodyObject.transform.localRotation = walkingBodyObject.transform.localRotation;
+        attackingBodyObject.transform.position = walkingBodyObject.transform.position; 
 
-        weaponSpriteObject.SetActive(true);
-        weaponBodyObject.SetActive(true);
+        attackingWeaponObject.SetActive(true);
+        attackingBodyObject.SetActive(true);
 
         attackIndex = 0; 
     }
 
     public void ContinueAttack()
     {
-        weaponSpriteObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[(int)attackIndex% nAttackSprites];
-        weaponBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[(int)attackIndex% nAttackSprites];
+        attackingWeaponObject.GetComponent<SpriteRenderer>().sprite = attackingWeaponSprites[(int)attackIndex% nAttackSprites];
+        attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[(int)attackIndex% nAttackSprites];
     }
 
     public void EndAttack()
@@ -340,14 +359,14 @@ public class Imp {
         attacking = false;
         hitCount = 0; 
 
-        bodyWeaponObject.SetActive(true);
-        bodySpriteObject.SetActive(true);
+        walkingWeaponObject.SetActive(true);
+        walkingBodyObject.SetActive(true);
 
-        weaponSpriteObject.SetActive(false);
-        weaponBodyObject.SetActive(false);
+        attackingWeaponObject.SetActive(false);
+        attackingBodyObject.SetActive(false);
 
-        bodySpriteObject.transform.localRotation = weaponBodyObject.transform.localRotation;
-        bodySpriteObject.transform.position = weaponBodyObject.transform.position;
+        walkingBodyObject.transform.localRotation = attackingBodyObject.transform.localRotation;
+        walkingBodyObject.transform.position = attackingBodyObject.transform.position;
 
     }
 
@@ -358,7 +377,7 @@ public class Imp {
 
     public Vector2 GetPosition()
     {
-        return bodySpriteObject.transform.position; 
+        return walkingBodyObject.transform.position; 
 
     }
 

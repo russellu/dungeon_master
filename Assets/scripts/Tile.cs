@@ -16,6 +16,11 @@ public class Tile
 
     }
 
+    public void SetLife(float newLife) 
+    {
+        life = newLife; 
+    }
+
     public void Hit(float damage)
     {
         life -= damage; 
