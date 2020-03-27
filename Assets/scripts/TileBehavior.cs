@@ -15,6 +15,8 @@ public class TileBehavior
     Sprite[] crackSprites;
     Sprite[] claimTileSprites;
     Sprite[] dirtSprites;
+    Sprite[] rubbleSprites;
+    Sprite[] claimSprites; 
 
     Sprite strawFull;
     Sprite rockFull;
@@ -29,7 +31,7 @@ public class TileBehavior
     Tile[,] tagTileObjects;
     GameObject[,] borderTileObjects;
     GameObject[,] unveiledTileObjects;
-    public Queue<int[]> toBeClaimedQueue; 
+    public Queue<GameObject> rubble; 
 
     public List<int[]> unveiledIndexList = new List<int[]>(); 
 
@@ -56,7 +58,9 @@ public class TileBehavior
     public Dictionary<string, GameObject> inaccessibleTagged;
 
     List<string> accessibleKeys;
-    List<string> inaccessibleKeys; 
+    List<string> inaccessibleKeys;
+
+    List<GameObject> claimedTiles; 
 
     string currentAlphaMask; 
 
@@ -74,8 +78,6 @@ public class TileBehavior
 
         Debug.Log("loading tile behavior grid_lvl");
         rockObject = new GameObject();
-        //strawTiles = Resources.LoadAll<Sprite>("terrains/croprock");
-        //rockTiles = Resources.LoadAll<Sprite>("terrains/croprock");
 
         rockFull = Resources.Load<Sprite>("terrains/gold_lvl_04_full");
         rockObject.AddComponent<SpriteRenderer>();
@@ -99,6 +101,8 @@ public class TileBehavior
 
         claimTileSprites = Resources.LoadAll<Sprite>("LevelItems/tiles_small");
         dirtSprites = Resources.LoadAll<Sprite>("terrains/dirts");
+        rubbleSprites = Resources.LoadAll<Sprite>("LevelItems/rubble2sprite");
+        claimSprites = Resources.LoadAll<Sprite>("LevelItems/explode");
 
         BuildMapPositionMatrix();
         InitAlphaInterfaceSprites();
@@ -190,6 +194,8 @@ public class TileBehavior
 
     private void BuildMapPositionMatrix()
     {
+        claimedTiles = new List<GameObject>();
+
         Vector2 spriteCenter = new Vector2(mapBounds.center.x, mapBounds.center.y);
         Vector2 spriteBounds = new Vector2(mapBounds.extents.x, mapBounds.extents.y);
 
@@ -204,6 +210,8 @@ public class TileBehavior
         borderTileObjects = new GameObject[sqrtTiles, sqrtTiles];
         mapUnveiledJagged = new int[sqrtTiles][];
         mapUnveiledOrTaggedJagged = new int[sqrtTiles][];
+
+        rubble = new Queue<GameObject>(); 
 
         unveiledTileObjects = new GameObject[sqrtTiles,sqrtTiles];
 
@@ -414,7 +422,7 @@ public class TileBehavior
             GameObject maskObject = new GameObject(currentAlphaMask);
             maskObject.AddComponent<SpriteRenderer>();
             maskObject.GetComponent<SpriteRenderer>().sprite = tileMask;
-            maskObject.transform.position = new Vector3(mapPosition.x, mapPosition.y, -3);
+            maskObject.transform.position = new Vector3(mapPosition.x, mapPosition.y, -3.25f);
             //maskObject.AddComponent<PolygonCollider2D>();
             //maskObject.GetComponent<MeshCollider>().convex = true; 
             borderTileObjects[tileIndices[0], tileIndices[1]] = maskObject;
@@ -554,7 +562,8 @@ public class TileBehavior
     {
         int[] tileIndices = GetTileIndex(pointMain);
         toBeClaimed[tileIndices[0], tileIndices[1]] = true;
-        toBeClaimedQueue.Enqueue(tileIndices); 
+        
+
 
         Vector2 mapPosition = mapPositionMatrix[tileIndices[0], tileIndices[1]];
 
@@ -577,8 +586,9 @@ public class TileBehavior
 
         Level_01.CheckUnveiled(tileIndices[0], tileIndices[1]);
 
-        unveiledIndexList.Add(tileIndices); 
+        rubble.Enqueue(CreateRubble(mapPosition, tileIndices[0], tileIndices[1]));
 
+        unveiledIndexList.Add(tileIndices); 
     }
 
     public void DegradeTileAlpha(string taggedTileName, int hitCount)
@@ -627,9 +637,34 @@ public class TileBehavior
         unveiledTileObjects[xIndex, yIndex] = gobj; 
     }
 
+    private GameObject CreateRubble(Vector2 mapPosition,int xIndex, int yIndex) {
+        GameObject gobj = new GameObject("rubble: " + xIndex + "," + yIndex);
+        gobj.AddComponent<SpriteRenderer>();
+        int random = UnityEngine.Random.Range(0, 9);
+        gobj.GetComponent<SpriteRenderer>().sprite = rubbleSprites[random];
+        gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -3);
 
+        return gobj; 
 
+    }
+    static int claimTileCount; 
+    public void ClaimTile(Vector2 mapPosition) {
+        main.StartTileAnimation(new SpriteAnimation(claimSprites, mapPosition));
+        int[] inds = GetTileIndex(mapPosition); 
+        GameObject gobj = new GameObject("tile: " + inds[0] + "," + inds[1]);
+        gobj.AddComponent<SpriteRenderer>();
+        int random = UnityEngine.Random.Range(0, 9);
+        
+        gobj.GetComponent<SpriteRenderer>().sprite = claimTileSprites[random];
+        gobj.transform.position = new Vector3(mapPositionMatrix[inds[0],inds[1]].x, mapPositionMatrix[inds[0], inds[1]].y, -2.50f);
+        claimedTiles.Add(gobj);
+        //main.DestroyGameObject(unveiledTileObjects[inds[0], inds[1]]); 
+        Debug.Log("claimTileCount = " + ++claimTileCount + " random =  " + random); 
+    }
 
+    public void DestroyRubble(GameObject rubble) {
+        main.DestroyGameObject(rubble);
+    }
 
 
 

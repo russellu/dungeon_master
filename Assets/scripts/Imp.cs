@@ -51,10 +51,12 @@ public class Imp {
     int attackingSoundIndex = 8;
     int hitCount = 0;
 
+    GameObject currRubble; 
 
     public Imp(Vector2 startingPosition)
     {
         Physics2D.gravity = Vector2.zero;
+        float startZ = -3.3f; 
 
         physicsMaterial = new PhysicsMaterial2D();
 
@@ -86,7 +88,7 @@ public class Imp {
         walkingBodyObject.GetComponent<SpriteRenderer>().color = new Color(0f, 1f, 0f);
 
         walkingWeaponObject.transform.parent = walkingBodyObject.transform;
-        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, startZ);
 
         attackingBodyObject.AddComponent<SpriteRenderer>();
         attackingBodyObject.GetComponent<SpriteRenderer>().sprite = attackingBodySprites[0];
@@ -101,7 +103,7 @@ public class Imp {
         attackingWeaponObject.SetActive(false);
 
         attackingWeaponObject.transform.parent = attackingBodyObject.transform;
-        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, startZ);
 
         weaponColliders = new PolygonCollider2D[nAttackSprites];
         for (int i = 0; i < nAttackSprites; i++)
@@ -177,13 +179,13 @@ public class Imp {
 
         if (!another)
         {
-            if (Level_01.goldsNotPickedUp.Count > 0 && currentObjective != "drop_off_gold")
+            if (Level_01.goldLocsNotPickedUp.Count > 0 && currentObjective != "drop_off_gold")
             {
                 Debug.Log("collecting gold now, count=" + Level_01.goldsNotPickedUp.Count);
-                currentObjective = "pick_up_gold"; 
-                int[] goldLocation = Level_01.goldLocsNotPickedUp[Level_01.goldLocsNotPickedUp.Count - 1];
+                currentObjective = "pick_up_gold";
+                int[] goldLocation = Level_01.goldLocsNotPickedUp.Dequeue(); 
                 tileBehavior.StartPath(this, goldLocation);
-                currentItemSeeking = Level_01.golds[Level_01.goldNotPickedUpInds[Level_01.goldNotPickedUpInds.Count - 1]];
+                currentItemSeeking = Level_01.golds[Level_01.goldNotPickedUpInds.Dequeue()]; 
                 movingToItem = true;
             }
             else if (currentObjective == "drop_off_gold")//other conditions
@@ -196,10 +198,14 @@ public class Imp {
             }
             else // look for some unclaimed tiles
             {
-                if (tileBehavior.toBeClaimedQueue.Count > 0) 
-                { 
-                
-                
+                if (tileBehavior.rubble.Count > 0) 
+                {
+                    currentObjective = "claim_tile"; 
+                    GameObject rubble = tileBehavior.rubble.Dequeue();
+                    tileBehavior.StartPath(this, tileBehavior.GetTileIndex(rubble.transform.position));
+                    currentItemSeeking = rubble; 
+                    movingToItem = true;
+                    currRubble = rubble; 
                 }
 
 
@@ -253,8 +259,8 @@ public class Imp {
              //   UpdateRotation((int)Vector2.SignedAngle(Vector2.up, currentTile.baseObject.transform.position - walkingBodyObject.transform.position));
                 OnAttack();
                 autoWalking = false;
-            }
-            else if (movingToItem == true && currentItemSeeking.activeInHierarchy == false) //another imp got to it first
+            }//currentItemSeeking.activeInHierarchy == false
+            else if (movingToItem == true && currentItemSeeking == null) //another imp got to it first
             {
                 movingToItem = false;
                 CheckForMoreTagged();
@@ -290,7 +296,7 @@ public class Imp {
         if ((moving == true || autoWalking == true) && attacking == false)
         {
             walkingBodyObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
-            walkingBodyObject.transform.position += newPositionVector * 1 * Time.deltaTime*2;
+            walkingBodyObject.transform.position += newPositionVector * 1 * Time.deltaTime*1.5f;
         }
     }
 
@@ -314,16 +320,20 @@ public class Imp {
             Level_01.RemoveGold(currentItemSeeking);
             currentObjective = "drop_off_gold";
             currentItemSeeking = Smelter.smelters[0];
-            Main.audioSource.PlayOneShot(Main.pickupGold,2); 
+            Main.audioSource.PlayOneShot(Main.pickupGold, 2);
         }
         else if (currentObjective == "drop_off_gold")
         {
             Debug.Log("dropping off gold");
             currentObjective = "";
-            Main.audioSource.PlayOneShot(Main.goldDeposit,2);
-            tileBehavior.levelState.updateGold(Random.Range(0,2)); 
-       //     Main.goldCount++;
-       //     Main.goldTxt.text = "Gold: " + Main.goldCount; 
+            Main.audioSource.PlayOneShot(Main.goldDeposit, 2);
+            tileBehavior.levelState.updateGold(Random.Range(0, 2));
+        }
+        else if (currentObjective == "claim_tile") {
+            tileBehavior.ClaimTile(currentItemSeeking.transform.position);
+            currentObjective = "";
+            tileBehavior.DestroyRubble(currRubble);
+            tileBehavior.levelState.updateStone(Random.Range(0, 2));
         }
     }
 

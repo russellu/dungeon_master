@@ -32,7 +32,7 @@ public class Portal
         portal.AddComponent<SpriteRenderer>();
         portal.GetComponent<SpriteRenderer>().sprite = portalSprite;
         portal.transform.position = new Vector3(
-        mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -2.5f);
+        mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -3.5f);
         portals.Add(portal); 
 
 
@@ -73,7 +73,7 @@ public class Portal
         Sprite portalSprite = Resources.Load<Sprite>(openPortalNames[portalPolaritys[updateIndex]]);
         portals[updateIndex].GetComponent<SpriteRenderer>().sprite = portalSprite;
         portals[updateIndex].transform.position = new Vector3(
-            mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -2.5f);
+            mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -3.5f);
 
         Main.audioSource.PlayOneShot(Main.portal, 1f);
         portalOpens[updateIndex] = true;

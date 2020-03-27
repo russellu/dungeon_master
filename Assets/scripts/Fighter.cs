@@ -57,7 +57,9 @@ public class Fighter
 
     public Fighter(CreatureManager creatureManager, Vector3 startingPosition, int teamNumber, float startingSpeed)
     {
-        this.creatureManager = creatureManager; 
+        this.creatureManager = creatureManager;
+
+        float zPos = -3.5f; 
 
         speed = startingSpeed; 
         Color teamColor = new Color(0f,0f,0f);
@@ -115,7 +117,7 @@ public class Fighter
         walkingBodyObject.AddComponent<Hit>();
 
         walkingWeaponObject.transform.parent = walkingBodyObject.transform;
-        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        walkingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, zPos);
 
        // Physics2D.IgnoreCollision(walkingBodyObject.GetComponent<CircleCollider2D>(), walkingWeaponObject.GetComponent<CircleCollider2D>(), true);
 
@@ -141,7 +143,7 @@ public class Fighter
         attackingWeaponObject.SetActive(false);
 
         attackingWeaponObject.transform.parent = attackingBodyObject.transform;
-        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3);
+        attackingBodyObject.transform.position = new Vector3(startingPosition.x, startingPosition.y, zPos);
 
         //  Physics2D.IgnoreCollision(attackingBodyObject.GetComponent<CircleCollider2D>(), attackingBodyObject.GetComponent<CircleCollider2D>(), true);
         //   allColliders.Add(attackingBodyObject.GetComponent<CircleCollider2D>());

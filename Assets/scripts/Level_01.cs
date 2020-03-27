@@ -10,17 +10,14 @@ public class Level_01
     static Portal portal;
     static List<int[]> goldInds;
     static List<int[]> stoneInds;
-    public static List<int[]> goldLocsNotPickedUp = new List<int[]>();
+    public static Queue<int[]> goldLocsNotPickedUp = new Queue<int[]>();
     public static List<GameObject> golds = new List<GameObject>();
-    public static List<int> goldNotPickedUpInds = new List<int>();
-    public static List<GameObject> goldsNotPickedUp = new List<GameObject>();
+    public static Queue<int> goldNotPickedUpInds = new Queue<int>();
+    public static Queue<GameObject> goldsNotPickedUp = new Queue<GameObject>();
     public static int gold = 0;
 
 
     public static float[,,] Init(Vector2[,] mapPositionMatrix, CreatureManager creatureManager) {
-
-     
-
 
         Level_01.mapPositionMatrix = mapPositionMatrix;
         Level_01.creatureManager = creatureManager;
@@ -84,13 +81,10 @@ public class Level_01
 
     public static void RemoveGold(GameObject goldObject)
     {
-        int goldIndex = goldsNotPickedUp.IndexOf(goldObject);
-        Debug.Log("removing gold, index=" + goldIndex);
 
-        goldNotPickedUpInds.RemoveAt(goldIndex);
-        goldsNotPickedUp.RemoveAt(goldIndex);
-        goldLocsNotPickedUp.RemoveAt(goldIndex); 
-        goldObject.SetActive(false);
+            goldObject.SetActive(false);
+            Main.Destroy(goldObject);
+     
     }
 
     public static void Update(float deltaTime) {
@@ -108,12 +102,13 @@ public class Level_01
     {
         for (int i = 0; i < goldInds.Count; i++) 
         {
-            if (x == goldInds[i][0] && y == goldInds[i][1]) //&& !goldsNotPickedUp.Contains(golds[i])
+            if (x == goldInds[i][0] && y == goldInds[i][1]) 
             {
                 Main.audioSource.PlayOneShot(Main.goldFalling,10);
-                goldsNotPickedUp.Add(golds[i]); 
-                goldLocsNotPickedUp.Add(new int[]{x,y});
-                goldNotPickedUpInds.Add(i); 
+                goldsNotPickedUp.Enqueue(golds[i]);
+                goldLocsNotPickedUp.Enqueue(new int[] { x, y });
+                goldNotPickedUpInds.Enqueue(i); 
+
                 
             }
         }

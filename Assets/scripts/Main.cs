@@ -20,8 +20,10 @@ public class Main : MonoBehaviour
     public static AudioClip goldFalling;
     public static AudioClip goldDeposit;
     public static AudioClip pickupGold;
+    public static AudioClip claim; 
 
     public Text goldTxt;
+    public Text stoneTxt; 
     public int goldCount = 0; 
     public static Text nCreaturesTxt; 
 
@@ -46,7 +48,11 @@ public class Main : MonoBehaviour
     GameObject controlSphere;
     private bool scrolling = false;
     private float prevDown = 0;
-    private Vector2 currentScrollPos; 
+    private Vector2 currentScrollPos;
+
+    List<SpriteAnimation> anims; 
+
+
 
     void Start()
     {
@@ -62,6 +68,8 @@ public class Main : MonoBehaviour
         goldFalling = Resources.Load<AudioClip>("audios/drop_gold");
         goldDeposit = Resources.Load<AudioClip>("audios/deposit_gold");
         pickupGold = Resources.Load<AudioClip>("audios/pickup_gold");
+        claim = Resources.Load<AudioClip>("audios/claim");
+
         Debug.Log("DONE loading audio grid_lvl");
 
 
@@ -77,6 +85,8 @@ public class Main : MonoBehaviour
         creatureManager.SetTileBehavior(tileBehavior);
 
         mainCamera.transform.Translate(new Vector3(2.4f, -2.6f, 0));
+
+        anims = new List<SpriteAnimation>(); 
 
         /*
         Physics2D.gravity = Vector2.zero;
@@ -94,6 +104,9 @@ public class Main : MonoBehaviour
 
     void Update()
     {
+
+        for(int i=0;i<anims.Count;i++)
+            ContinueTileAnimation(anims[i]); 
 
         if (Input.touchCount >= 2)
         {
@@ -296,6 +309,21 @@ public class Main : MonoBehaviour
         catch (Exception e) { }
 
     }
+
+    public void StartTileAnimation(SpriteAnimation anim) {
+        anims.Add(anim);   
+    }
+
+    public void ContinueTileAnimation(SpriteAnimation anim) {
+        bool finished = anim.AdvanceAnimation();
+        if (finished) {
+            audioSource.PlayOneShot(claim, 1f);
+            Destroy(anim.GetAnimationTile()); 
+            anims.Remove(anim);      
+        }  
+    }
+
+
 }
 
 

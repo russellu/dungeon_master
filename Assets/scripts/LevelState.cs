@@ -5,6 +5,7 @@ using UnityEngine;
 public class LevelState 
 {
     public float gold = 0;
+    public float stone = 0; 
     TileBehavior tileBehavior;
     Main main; 
 
@@ -18,8 +19,13 @@ public class LevelState
     
     }
 
+    public void updateStone(float stoneAmount) {
+        stone += 10;
+        main.stoneTxt.text = "Stone: " + stone; 
+    }
+
     public void updateGold(float goldAmount) {
-        gold += goldAmount;
+        gold += 10;
         main.goldTxt.text = "Gold: " + gold; 
     }
 

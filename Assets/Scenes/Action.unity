@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 112472495}
   - component: {fileID: 112472494}
   m_Layer: 5
-  m_Name: Text
+  m_Name: StoneText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -188,7 +188,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'Creatures:'
+  m_Text: 'Stone:'
 --- !u!222 &112472495
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -429,6 +429,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   goldTxt: {fileID: 1801654954}
+  stoneTxt: {fileID: 112472494}
   goldCount: 0
   smallSphere: {fileID: 0}
 --- !u!20 &519420031

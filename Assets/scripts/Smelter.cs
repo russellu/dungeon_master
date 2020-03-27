@@ -21,7 +21,7 @@ public class Smelter
         smelter.AddComponent<SpriteRenderer>();
         smelter.GetComponent<SpriteRenderer>().sprite = portalSprite;
         smelter.transform.position = new Vector3(
-        mapPositionMatrix[smelterX, smelterY].x, mapPositionMatrix[smelterX, smelterY].y, -2.5f);
+        mapPositionMatrix[smelterX, smelterY].x, mapPositionMatrix[smelterX, smelterY].y, -3.1f);
         smelters.Add(smelter);
 
     }
