@@ -76,11 +76,16 @@
     <Compile Include="Assets\scripts\LevelState.cs" />
     <Compile Include="Assets\scripts\Main.cs" />
     <Compile Include="Assets\scripts\Portal.cs" />
+    <Compile Include="Assets\scripts\QuadCreator.cs" />
     <Compile Include="Assets\scripts\RoomPathFinder.cs" />
+    <Compile Include="Assets\scripts\Rooms.cs" />
     <Compile Include="Assets\scripts\Smelter.cs" />
     <Compile Include="Assets\scripts\SpriteAnimation.cs" />
+    <Compile Include="Assets\scripts\TestMesh.cs" />
     <Compile Include="Assets\scripts\Tile.cs" />
     <Compile Include="Assets\scripts\TileBehavior.cs" />
+    <None Include="Assets\special_shader.shader" />
+    <None Include="Assets\sprite_shadows.shader" />
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>C:/shared/unity_projects/dungeon_manager2d/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>

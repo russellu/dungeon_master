@@ -22,9 +22,9 @@ public class Level_01
         Level_01.mapPositionMatrix = mapPositionMatrix;
         Level_01.creatureManager = creatureManager;
 
-        Debug.Log("loading GRID_LVL_04"); 
         Sprite mapOutline = Resources.Load<Sprite>("terrains/levels/grid_lvl_04");
-        Debug.Log("loaded GRID_LVL_04");
+       
+
 
         float[,,] mapMarkers = new float[64, 64,3];
         goldInds = new List<int[]>();
@@ -43,9 +43,6 @@ public class Level_01
                 mapMarkers[i, j, 1] = green;
                 mapMarkers[i, j, 2] = blue;
 
-                //gold 255 242 0
-                //rock 185 122 87
-                //enemy portal 237 28 36
                 if (red == 6 && green == 6 && blue == 6) // good portal
                 {
                     portalLocation = new int[] {i,j};
@@ -81,10 +78,8 @@ public class Level_01
 
     public static void RemoveGold(GameObject goldObject)
     {
-
             goldObject.SetActive(false);
-            Main.Destroy(goldObject);
-     
+            Main.Destroy(goldObject); 
     }
 
     public static void Update(float deltaTime) {
@@ -107,9 +102,7 @@ public class Level_01
                 Main.audioSource.PlayOneShot(Main.goldFalling,10);
                 goldsNotPickedUp.Enqueue(golds[i]);
                 goldLocsNotPickedUp.Enqueue(new int[] { x, y });
-                goldNotPickedUpInds.Enqueue(i); 
-
-                
+                goldNotPickedUpInds.Enqueue(i);            
             }
         }
     }
@@ -128,8 +121,7 @@ public class Level_01
             tmp.a = 0.45f;
             gold.GetComponent<SpriteRenderer>().color = tmp;
             gold.transform.position = new Vector3(
-                mapPositionMatrix[goldIndsX, goldIndsY].x, mapPositionMatrix[goldIndsX, goldIndsY].y, -2.5f);
-
+                mapPositionMatrix[goldIndsX, goldIndsY].x, mapPositionMatrix[goldIndsX, goldIndsY].y, -2.6f);
             golds.Add(gold); 
         }
     }

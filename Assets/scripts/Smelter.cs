@@ -7,7 +7,8 @@ public class Smelter
 
     public static List<GameObject> smelters = new List<GameObject>();
     public static List<int[]> smelterLocations = new List<int[]>(); 
-    static Vector2[,] mapPositionMatrix; 
+    static Vector2[,] mapPositionMatrix;
+    public static GameObject heartLight; 
 
     public static void Init(int[] smelterLoc, Vector2[,] mapPosMat) {
         mapPositionMatrix = mapPosMat;
@@ -23,6 +24,10 @@ public class Smelter
         smelter.transform.position = new Vector3(
         mapPositionMatrix[smelterX, smelterY].x, mapPositionMatrix[smelterX, smelterY].y, -3.1f);
         smelters.Add(smelter);
+
+        heartLight = GameObject.Find("HeartLight");
+        heartLight.transform.position = new Vector3(mapPositionMatrix[smelterX, smelterY].x,
+            mapPositionMatrix[smelterX, smelterY].y, -3f); 
 
     }
 }

@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Imp {
 
+    GameObject shadowSphere; 
+
     Sprite[] walkingWeaponSprites;
     Sprite[] attackingBodySprites;
     Sprite[] walkingBodySprites;
@@ -44,17 +46,25 @@ public class Imp {
 
     bool movingToItem = false;
     int[] itemLocation; 
-    GameObject currentItemSeeking;
+    public GameObject currentItemSeeking;
     GameObject currentItemHeld;
     string currentObjective; 
 
     int attackingSoundIndex = 8;
     int hitCount = 0;
 
-    GameObject currRubble; 
+    int claimCount = 0;
+
+    GameObject currRubble;
+    Vector2 currentClaimPosition; 
 
     public Imp(Vector2 startingPosition)
     {
+        shadowSphere = Main.Instantiate(Resources.Load("prefabs/Cylinder")) as GameObject;
+        shadowSphere.transform.position = new Vector3(startingPosition.x, startingPosition.y, -3.1f);
+        shadowSphere.GetComponent<Renderer>().material.color = new Color(1, 0, 0, 0f);
+        Material material = new Material(Shader.Find("Custom/TransparentShadowCollector"));
+        shadowSphere.GetComponent<Renderer>().material = material;
         Physics2D.gravity = Vector2.zero;
         float startZ = -3.3f; 
 
@@ -183,13 +193,17 @@ public class Imp {
             {
                 Debug.Log("collecting gold now, count=" + Level_01.goldsNotPickedUp.Count);
                 currentObjective = "pick_up_gold";
-                int[] goldLocation = Level_01.goldLocsNotPickedUp.Dequeue(); 
+                int[] goldLocation = Level_01.goldLocsNotPickedUp.Peek(); 
                 tileBehavior.StartPath(this, goldLocation);
-                currentItemSeeking = Level_01.golds[Level_01.goldNotPickedUpInds.Dequeue()]; 
+                currentItemSeeking = Level_01.golds[Level_01.goldNotPickedUpInds.Peek()]; 
                 movingToItem = true;
+                Level_01.goldLocsNotPickedUp.Dequeue();
+                Level_01.goldNotPickedUpInds.Dequeue();
             }
             else if (currentObjective == "drop_off_gold")//other conditions
             {
+ 
+
                 int[] smelterLocation = Smelter.smelterLocations[0];
                 tileBehavior.StartPath(this, smelterLocation);
                 movingToItem = true; 
@@ -200,16 +214,17 @@ public class Imp {
             {
                 if (tileBehavior.rubble.Count > 0) 
                 {
-                    currentObjective = "claim_tile"; 
-                    GameObject rubble = tileBehavior.rubble.Dequeue();
-                    tileBehavior.StartPath(this, tileBehavior.GetTileIndex(rubble.transform.position));
-                    currentItemSeeking = rubble; 
-                    movingToItem = true;
-                    currRubble = rubble; 
+                    GameObject rubble = tileBehavior.ClosestRubble(GetPosition());
+                    if (rubble != null)
+                    {
+                        currentObjective = "claim_tile";
+                        tileBehavior.rubbleClaiming.Add(rubble);
+                        tileBehavior.StartPath(this, tileBehavior.GetTileIndex(rubble.transform.position));
+                        currentItemSeeking = rubble;
+                        movingToItem = true;
+                        currRubble = rubble;
+                    }
                 }
-
-
-
 
             }
         }
@@ -217,6 +232,12 @@ public class Imp {
 
     public void Update()
     {
+
+        if (claimCount > 0) {
+            ReduceClaimCount();
+            return; 
+        }
+
         if (attacking == true)
         {
             ContinueAttack();
@@ -250,23 +271,21 @@ public class Imp {
         {
             Vector2 currentPosition = walkingBodyObject.transform.position;
             float norm = (currentPosition - destinationVector).magnitude;
-
-           // float rand = Random.Range(0.1f, 0.55f);
-            float rand2 = Random.Range(0.01f, 0.13f);
+            float rand2 = Random.Range(0.05f, 0.12f);
 
             if (currentPathIndex >= currentPath.Count - 1 && movingToToggled == true && norm < 0.4f)
             {
-             //   UpdateRotation((int)Vector2.SignedAngle(Vector2.up, currentTile.baseObject.transform.position - walkingBodyObject.transform.position));
                 OnAttack();
                 autoWalking = false;
-            }//currentItemSeeking.activeInHierarchy == false
+            }
             else if (movingToItem == true && currentItemSeeking == null) //another imp got to it first
             {
                 movingToItem = false;
                 CheckForMoreTagged();
             }
-            else if (currentPathIndex >= currentPath.Count - 1 && movingToItem == true && norm < 0.2)//&&
+            else if (currentPathIndex >= currentPath.Count - 1 && movingToItem == true && norm < 0.2)
             {
+
                 OnObjective();
                 CheckForMoreTagged();
             }
@@ -297,6 +316,9 @@ public class Imp {
         {
             walkingBodyObject.GetComponent<Rigidbody2D>().velocity = new Vector3();
             walkingBodyObject.transform.position += newPositionVector * 1 * Time.deltaTime*1.5f;
+            shadowSphere.transform.position = walkingBodyObject.transform.position; 
+           shadowSphere.transform.position = new Vector3(walkingBodyObject.transform.position.x,
+               walkingBodyObject.transform.position.y, -3.1f) ; 
         }
     }
 
@@ -314,12 +336,12 @@ public class Imp {
 
     public void OnObjective() 
     {
-        //Debug.Log("picking up gold");
         if (currentObjective == "pick_up_gold")
         {
             Level_01.RemoveGold(currentItemSeeking);
             currentObjective = "drop_off_gold";
             currentItemSeeking = Smelter.smelters[0];
+
             Main.audioSource.PlayOneShot(Main.pickupGold, 2);
         }
         else if (currentObjective == "drop_off_gold")
@@ -328,19 +350,33 @@ public class Imp {
             currentObjective = "";
             Main.audioSource.PlayOneShot(Main.goldDeposit, 2);
             tileBehavior.levelState.updateGold(Random.Range(0, 2));
+
+            Smelter.heartLight.GetComponent<Light>().intensity += 0.1f; 
+
         }
         else if (currentObjective == "claim_tile") {
-            tileBehavior.ClaimTile(currentItemSeeking.transform.position);
+            tileBehavior.ClaimTile(this, currentItemSeeking);
             currentObjective = "";
-            tileBehavior.DestroyRubble(currRubble);
             tileBehavior.levelState.updateStone(Random.Range(0, 2));
         }
     }
 
-    public void ClearObjective() 
-    {
-    
+
+    public void DoClaim(Vector2 currentRubblePosition) {
+        // run claiming animation
+        // pause for a second
+        // replace the dirt with a tile 
+        currentClaimPosition = currentRubblePosition; 
+        claimCount = 20; 
+
     }
+
+    public void ReduceClaimCount() {
+        claimCount--;
+        if (claimCount == 0)
+            tileBehavior.FinishClaimTile(currentClaimPosition); 
+    }
+
 
     public void OnAttack()
     {
@@ -390,7 +426,5 @@ public class Imp {
         return walkingBodyObject.transform.position; 
 
     }
-
-  
 
 }

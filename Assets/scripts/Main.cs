@@ -29,7 +29,8 @@ public class Main : MonoBehaviour
 
     TileBehavior tileBehavior;
     RoomPathFinder roomPathFinder;
-    CreatureManager creatureManager; 
+    CreatureManager creatureManager;
+    Rooms rooms; 
 
     Sprite circSprite;
     PhysicsMaterial2D physicsMaterial;
@@ -50,9 +51,10 @@ public class Main : MonoBehaviour
     private float prevDown = 0;
     private Vector2 currentScrollPos;
 
-    List<SpriteAnimation> anims; 
+    List<SpriteAnimation> anims;
 
 
+    private float lightCount = 0;
 
     void Start()
     {
@@ -84,6 +86,8 @@ public class Main : MonoBehaviour
         tileBehavior = new TileBehavior(this, creatureManager);
         creatureManager.SetTileBehavior(tileBehavior);
 
+        rooms = new Rooms(tileBehavior); 
+
         mainCamera.transform.Translate(new Vector3(2.4f, -2.6f, 0));
 
         anims = new List<SpriteAnimation>(); 
@@ -104,6 +108,9 @@ public class Main : MonoBehaviour
 
     void Update()
     {
+
+       //lightCount += 0.01f;
+       // Smelter.heartLight.GetComponent<Light>().intensity = (float)Math.Sin(lightCount) + 2f; 
 
         for(int i=0;i<anims.Count;i++)
             ContinueTileAnimation(anims[i]); 

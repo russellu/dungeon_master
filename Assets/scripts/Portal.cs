@@ -76,7 +76,13 @@ public class Portal
             mapPositionMatrix[portalX, portalY].x, mapPositionMatrix[portalX, portalY].y, -3.5f);
 
         Main.audioSource.PlayOneShot(Main.portal, 1f);
-        portalOpens[updateIndex] = true;
+
+        GameObject heartLight = Main.Instantiate(GameObject.Find("HeartLight"));
+        heartLight.GetComponent<Light>().color = new Color(0, 0, 1); 
+        heartLight.transform.position = new Vector3(mapPositionMatrix[portalX, portalY].x,
+            mapPositionMatrix[portalX, portalY].y, -3f);
+
+        //portalOpens[updateIndex] = true;
 
     }
 }

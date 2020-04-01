@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System; 
+using System;
 
 
 public class TileBehavior
@@ -16,7 +16,11 @@ public class TileBehavior
     Sprite[] claimTileSprites;
     Sprite[] dirtSprites;
     Sprite[] rubbleSprites;
-    Sprite[] claimSprites; 
+    Sprite[] claimSprites;
+
+    Material rubbleMaterial;
+    Material dirtMaterial;
+    Material tileMaterial;
 
     Sprite strawFull;
     Sprite rockFull;
@@ -27,16 +31,21 @@ public class TileBehavior
     int[,] mapIndices;
     public bool[,] mapUnveiled;
     bool[,] mapTagged;
-    bool[,] toBeClaimed; 
+    bool[,] toBeClaimed;
     Tile[,] tagTileObjects;
     GameObject[,] borderTileObjects;
     GameObject[,] unveiledTileObjects;
-    public Queue<GameObject> rubble; 
+    public List<GameObject> rubble;
+    public List<GameObject> rubbleClaiming;
 
-    public List<int[]> unveiledIndexList = new List<int[]>(); 
+    Sprite okSprite; 
+
+    private List<Vector2> claimedLocations; 
+
+    public List<int[]> unveiledIndexList = new List<int[]>();
 
     public int[][] mapUnveiledJagged;
-    int[][] mapUnveiledOrTaggedJagged; 
+    int[][] mapUnveiledOrTaggedJagged;
 
     Sprite topAlphaInterface;
     Sprite botAlphaInterface;
@@ -60,13 +69,13 @@ public class TileBehavior
     List<string> accessibleKeys;
     List<string> inaccessibleKeys;
 
-    List<GameObject> claimedTiles; 
+    List<GameObject> claimedTiles;
 
-    string currentAlphaMask; 
+    string currentAlphaMask;
 
     Main main;
     CreatureManager creatureManager;
-    public LevelState levelState; 
+    public LevelState levelState;
 
     float[,,] mapDesignTileValues;
 
@@ -74,7 +83,7 @@ public class TileBehavior
     {
         this.main = main;
         this.creatureManager = creatureManager;
-        levelState = new LevelState(main, this); 
+        levelState = new LevelState(main, this);
 
         Debug.Log("loading tile behavior grid_lvl");
         rockObject = new GameObject();
@@ -82,8 +91,13 @@ public class TileBehavior
         rockFull = Resources.Load<Sprite>("terrains/gold_lvl_04_full");
         rockObject.AddComponent<SpriteRenderer>();
         rockObject.GetComponent<SpriteRenderer>().sprite = rockFull;
-        Debug.Log("done loading tile behavior grid_lvl"); 
+        Debug.Log("done loading tile behavior grid_lvl");
         mapBounds = rockObject.GetComponent<SpriteRenderer>().sprite.bounds;
+
+        rubbleMaterial = new Material(Shader.Find("Mobile/Particles/Alpha Blended"));
+        tileMaterial = new Material(Shader.Find("Mobile/Diffuse"));
+        dirtMaterial = new Material(Shader.Find("Mobile/Diffuse"));
+
 
         accessibleTagged = new Dictionary<string, GameObject>();
         inaccessibleTagged = new Dictionary<string, GameObject>();
@@ -112,7 +126,7 @@ public class TileBehavior
             for (int j = 0; j < mapDesignTileValues.GetLength(0); j++)
             {
                 if (i > 1 && j > 1 && i < mapDesignTileValues.GetLength(0) - 2 && j < mapDesignTileValues.GetLength(1) - 2) //bound check
-                    if (mapDesignTileValues[i, j, 0] == 4|| mapDesignTileValues[i,j,0] ==5) // already unveiled by map design
+                    if (mapDesignTileValues[i, j, 0] == 4 || mapDesignTileValues[i, j, 0] == 5) // already unveiled by map design
                     {
                         UnveilTile(new Vector3(mapPositionMatrix[i, j].x, mapPositionMatrix[i, j].y, -2));
                     }
@@ -121,11 +135,9 @@ public class TileBehavior
 
     public void StartPath(Imp imp, int[] end)
     {
-            int[] start = GetTileIndex(imp.GetPosition());
-        //Debug.Log("start = " + start[0] + "," + start[1] + " end = " + end[0] + "," + end[1]); 
-            List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
-        //Debug.Log("path = " + path.Count); 
-            imp.SetupWalkingPath(path, mapPositionMatrix, "", this, tagTileObjects[end[0],end[1]]);
+        int[] start = GetTileIndex(imp.GetPosition());
+        List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
+        imp.SetupWalkingPath(path, mapPositionMatrix, "", this, tagTileObjects[end[0], end[1]]);
 
     }
 
@@ -135,18 +147,16 @@ public class TileBehavior
 
         List<Imp> idleImps = creatureManager.GetIdleImps();
 
-        foreach(Imp imp in idleImps)
-        { 
+        foreach (Imp imp in idleImps)
+        {
             int[] start = GetTileIndex(imp.GetPosition());
             List<Vector2> path = new Astar(mapUnveiledJagged, start, end, "Euclidean").result;
-
-
 
             if (imp.movingToToggled == false && path.Count > 0)
             {
                 imp.InitiateTileMove();
                 imp.SetupWalkingPath(path, mapPositionMatrix, gameObjectName, this, tagTileObjects[end[0], end[1]]);
-            }        
+            }
         }
         mapUnveiledJagged[end[1]][end[0]] = 1;
     }
@@ -160,16 +170,16 @@ public class TileBehavior
         if (mapUnveiled[x - 1, y] || mapUnveiled[x + 1, y] || mapUnveiled[x, y - 1] || mapUnveiled[x, y + 1])
             return true;
         else
-            return false; 
+            return false;
     }
 
     public void ClearSpaceInMiddle()
     {
 
-        for (float i = -1; i < 1; i+=0.1f)
-            for (float j = -1; j < 1f; j+=0.1f)
+        for (float i = -1; i < 1; i += 0.1f)
+            for (float j = -1; j < 1f; j += 0.1f)
             {
-                UnveilTile(new Vector3(i,j,-2));
+                UnveilTile(new Vector3(i, j, -2));
             }
     }
 
@@ -204,21 +214,26 @@ public class TileBehavior
         mapPositionMatrix = new Vector2[sqrtTiles, sqrtTiles];
         mapIndices = new int[sqrtTiles, sqrtTiles];
         mapTagged = new bool[sqrtTiles, sqrtTiles];
-        toBeClaimed = new bool[sqrtTiles, sqrtTiles]; 
+        toBeClaimed = new bool[sqrtTiles, sqrtTiles];
         mapUnveiled = new bool[sqrtTiles, sqrtTiles];
         tagTileObjects = new Tile[sqrtTiles, sqrtTiles];
         borderTileObjects = new GameObject[sqrtTiles, sqrtTiles];
         mapUnveiledJagged = new int[sqrtTiles][];
         mapUnveiledOrTaggedJagged = new int[sqrtTiles][];
 
-        rubble = new Queue<GameObject>(); 
+        rubble = new List<GameObject>();
+        rubbleClaiming = new List<GameObject>();
 
-        unveiledTileObjects = new GameObject[sqrtTiles,sqrtTiles];
+        okSprite = Resources.Load<Sprite>("LevelItems/ok_room");
+
+        unveiledTileObjects = new GameObject[sqrtTiles, sqrtTiles];
+
+        claimedLocations = new List<Vector2>(); 
 
         for (int i = 0; i < mapUnveiledJagged.Length; i++)
         {
             mapUnveiledJagged[i] = new int[sqrtTiles];
-            mapUnveiledOrTaggedJagged[i] = new int[sqrtTiles]; 
+            mapUnveiledOrTaggedJagged[i] = new int[sqrtTiles];
         }
 
         float tileWidth = (spriteBounds.x * 2) / sqrtTiles;
@@ -247,11 +262,11 @@ public class TileBehavior
     }
 
     public bool TagTile(Vector3 pointMain, int untaggingMode)
-    { 
+    {
 
         int[] tileIndices = GetTileIndex(pointMain);
 
-        bool alreadyTagged = mapTagged[tileIndices[0], tileIndices[1]]; 
+        bool alreadyTagged = mapTagged[tileIndices[0], tileIndices[1]];
 
         Vector2 mapPosition = mapPositionMatrix[tileIndices[0], tileIndices[1]];
 
@@ -269,14 +284,14 @@ public class TileBehavior
                 {
                     //Debug.Log("Tile is accessible, finding path...");
                     accessibleTagged.Add(taggedOject.name, taggedOject);
-                    accessibleKeys.Add(taggedOject.name); 
+                    accessibleKeys.Add(taggedOject.name);
                     StartPathToTagged(tileIndices, taggedOject.name);
                 }
                 else
                 {
                     inaccessibleTagged.Add(taggedOject.name, taggedOject);
-                    inaccessibleKeys.Add(taggedOject.name); 
-                   //
+                    inaccessibleKeys.Add(taggedOject.name);
+                    //
                     //Debug.Log("Tile is inaccessible, storing for later...");
                 }
             }
@@ -291,7 +306,7 @@ public class TileBehavior
                 accessibleKeys.RemoveAt(accessibleKeys.IndexOf(objectTag));
 
                 // main.Imp.CancelMovementToTagged(objectTag);            
-                creatureManager.CancelImpMovements(objectTag); 
+                creatureManager.CancelImpMovements(objectTag);
             }
             else if (inaccessibleTagged.ContainsKey(objectTag))
             {
@@ -305,14 +320,14 @@ public class TileBehavior
             mapTagged[tileIndices[0], tileIndices[1]] = false;
         }
 
-        return alreadyTagged; 
+        return alreadyTagged;
     }
 
 
     private int GetClosestEuclideanAccessible(Vector2 position)
     {
         int closestInd = -1;
-        float minDist = 9999999; 
+        float minDist = 9999999;
         for (int i = 0; i < accessibleKeys.Count; i++)
         {
             GameObject obj = accessibleTagged[accessibleKeys[i]];
@@ -326,7 +341,7 @@ public class TileBehavior
                 }
             }
         }
-        return closestInd; 
+        return closestInd;
     }
 
     public bool UpdateDestroyedAndRequestAnother(string tileName, Vector2 position)
@@ -356,24 +371,24 @@ public class TileBehavior
             }
         }
         else return false;
-        return true; 
+        return true;
     }
 
     private void RedefineAccessibleTagged()
     {
-        List<string> inaccessiblesToRemove = new List<string>(); 
+        List<string> inaccessiblesToRemove = new List<string>();
 
-        for(int i=0;i<inaccessibleKeys.Count;i++)
+        for (int i = 0; i < inaccessibleKeys.Count; i++)
         {
-            string s = inaccessibleKeys[i]; 
-            GameObject obj = inaccessibleTagged[s]; 
+            string s = inaccessibleKeys[i];
+            GameObject obj = inaccessibleTagged[s];
             int[] tileIndex = GetTileIndex(obj.transform.position);
 
             if (CheckIfTaggedAccessible(tileIndex))
             {
                 accessibleTagged.Add(s, obj);
                 accessibleKeys.Add(s);
-                inaccessiblesToRemove.Add(s); 
+                inaccessiblesToRemove.Add(s);
             }
         }
 
@@ -391,26 +406,25 @@ public class TileBehavior
         gobj.AddComponent<SpriteRenderer>();
 
         gobj.GetComponent<SpriteRenderer>().sprite = claimTileSprites[3];
-            //rockTiles[mapIndices[xIndex, yIndex]];
-        gobj.GetComponent<SpriteRenderer>().color = new Color(0, 1, 0,0.2f);
+        gobj.GetComponent<SpriteRenderer>().color = new Color(0, 1, 0, 0.2f);
         gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -1);
 
         mapTagged[xIndex, yIndex] = true;
 
-        float tileLife = 4; 
-        switch (mapDesignTileValues[xIndex, yIndex,0]) 
+        float tileLife = 4;
+        switch (mapDesignTileValues[xIndex, yIndex, 0])
         {
             case (1):
                 tileLife = 1000;
                 break;
             default:
                 tileLife = 4;
-                break; 
+                break;
         }
 
         tagTileObjects[xIndex, yIndex] = new Tile(gobj, tileLife);
 
-        return gobj; 
+        return gobj;
     }
 
     private void AddAlphaMask(Vector2 mapPosition, int[] tileIndices)
@@ -423,8 +437,6 @@ public class TileBehavior
             maskObject.AddComponent<SpriteRenderer>();
             maskObject.GetComponent<SpriteRenderer>().sprite = tileMask;
             maskObject.transform.position = new Vector3(mapPosition.x, mapPosition.y, -3.25f);
-            //maskObject.AddComponent<PolygonCollider2D>();
-            //maskObject.GetComponent<MeshCollider>().convex = true; 
             borderTileObjects[tileIndices[0], tileIndices[1]] = maskObject;
         }
     }
@@ -450,8 +462,7 @@ public class TileBehavior
                 maskObject.AddComponent<SpriteRenderer>();
                 maskObject.GetComponent<SpriteRenderer>().sprite = newAlphaMask;
                 maskObject.transform.position = new Vector3(mapPositionMatrix[currentInds[0], currentInds[1]].x, mapPositionMatrix[currentInds[0], currentInds[1]].y, -3);
-                //maskObject.AddComponent<PolygonCollider2D>();
-                //maskObject.GetComponent<MeshCollider>().convex = true;
+
                 borderTileObjects[currentInds[0], currentInds[1]] = maskObject;
             }
         }
@@ -562,7 +573,7 @@ public class TileBehavior
     {
         int[] tileIndices = GetTileIndex(pointMain);
         toBeClaimed[tileIndices[0], tileIndices[1]] = true;
-        
+
 
 
         Vector2 mapPosition = mapPositionMatrix[tileIndices[0], tileIndices[1]];
@@ -570,7 +581,7 @@ public class TileBehavior
         if (mapTagged[tileIndices[0], tileIndices[1]] == true)
         {
             main.DestroyGameObject(tagTileObjects[tileIndices[0], tileIndices[1]].baseObject);
-            mapTagged[tileIndices[0], tileIndices[1]] = false; 
+            mapTagged[tileIndices[0], tileIndices[1]] = false;
         }
 
         if (mapUnveiled[tileIndices[0], tileIndices[1]] == false)
@@ -586,17 +597,17 @@ public class TileBehavior
 
         Level_01.CheckUnveiled(tileIndices[0], tileIndices[1]);
 
-        rubble.Enqueue(CreateRubble(mapPosition, tileIndices[0], tileIndices[1]));
+        rubble.Add(CreateRubble(mapPosition, tileIndices[0], tileIndices[1]));
 
-        unveiledIndexList.Add(tileIndices); 
+        unveiledIndexList.Add(tileIndices);
     }
 
     public void DegradeTileAlpha(string taggedTileName, int hitCount)
     {
         if (accessibleTagged.ContainsKey(taggedTileName))
-        {   
+        {
             GameObject obj = accessibleTagged[taggedTileName];
-            if(hitCount<crackSprites.Length)
+            if (hitCount < crackSprites.Length)
                 obj.GetComponent<SpriteRenderer>().sprite = crackSprites[hitCount];
         }
     }
@@ -625,48 +636,94 @@ public class TileBehavior
 
     private void CreateNewTile(Vector2 mapPosition, int xIndex, int yIndex)
     {
-        GameObject gobj = new GameObject("tile: " + xIndex+ "," + yIndex);
+        GameObject gobj = new GameObject("tile: " + xIndex + "," + yIndex);
         gobj.AddComponent<SpriteRenderer>();
-        //gobj.GetComponent<SpriteRenderer>().sprite = strawTiles[mapIndices[xIndex, yIndex]];
         //update claimed sprite
-        int random = UnityEngine.Random.Range(0, 64); 
+        int random = UnityEngine.Random.Range(0, 64);
         gobj.GetComponent<SpriteRenderer>().sprite = dirtSprites[random];
 
-        gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -2);
+        gobj.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        gobj.GetComponent<Renderer>().receiveShadows = true;
 
-        unveiledTileObjects[xIndex, yIndex] = gobj; 
+        gobj.GetComponent<Renderer>().material = dirtMaterial;
+
+        gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -2.5f);
+
+        unveiledTileObjects[xIndex, yIndex] = gobj;
     }
 
-    private GameObject CreateRubble(Vector2 mapPosition,int xIndex, int yIndex) {
+    private GameObject CreateRubble(Vector2 mapPosition, int xIndex, int yIndex) {
         GameObject gobj = new GameObject("rubble: " + xIndex + "," + yIndex);
         gobj.AddComponent<SpriteRenderer>();
+        gobj.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        gobj.GetComponent<Renderer>().receiveShadows = true;
+        gobj.GetComponent<Renderer>().material = rubbleMaterial;
         int random = UnityEngine.Random.Range(0, 9);
         gobj.GetComponent<SpriteRenderer>().sprite = rubbleSprites[random];
-        gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -3);
+        gobj.transform.position = new Vector3(mapPosition.x, mapPosition.y, -2.5f);
 
-        return gobj; 
+        return gobj;
 
     }
-    static int claimTileCount; 
-    public void ClaimTile(Vector2 mapPosition) {
-        main.StartTileAnimation(new SpriteAnimation(claimSprites, mapPosition));
-        int[] inds = GetTileIndex(mapPosition); 
+    static int claimTileCount;
+    public void ClaimTile(Imp claimingImp, GameObject currentRubble) {
+        rubble.Remove(currentRubble);
+        rubbleClaiming.Remove(currentRubble);
+        claimingImp.DoClaim(currentRubble.transform.position);
+        claimedLocations.Add(currentRubble.transform.position); 
+        DestroyRubble(currentRubble);
+
+    }
+
+    public void FinishClaimTile(Vector2 tilePosition) {
+        //Vector2 tilePosition = claimingImp.currentItemSeeking.transform.position; 
+
+        main.StartTileAnimation(new SpriteAnimation(claimSprites, tilePosition));
+        int[] inds = GetTileIndex(tilePosition);
         GameObject gobj = new GameObject("tile: " + inds[0] + "," + inds[1]);
         gobj.AddComponent<SpriteRenderer>();
         int random = UnityEngine.Random.Range(0, 9);
-        
         gobj.GetComponent<SpriteRenderer>().sprite = claimTileSprites[random];
-        gobj.transform.position = new Vector3(mapPositionMatrix[inds[0],inds[1]].x, mapPositionMatrix[inds[0], inds[1]].y, -2.50f);
+        gobj.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+        gobj.GetComponent<Renderer>().material = tileMaterial;
+        gobj.GetComponent<Renderer>().receiveShadows = true;
+        gobj.transform.position = new Vector3(mapPositionMatrix[inds[0], inds[1]].x, mapPositionMatrix[inds[0], inds[1]].y, -2.6f);
         claimedTiles.Add(gobj);
-        //main.DestroyGameObject(unveiledTileObjects[inds[0], inds[1]]); 
-        Debug.Log("claimTileCount = " + ++claimTileCount + " random =  " + random); 
     }
 
     public void DestroyRubble(GameObject rubble) {
         main.DestroyGameObject(rubble);
     }
 
+    public GameObject ClosestRubble(Vector2 impPosition) {
+        float minDist = 99999999;
+        GameObject closestRubble = null; 
+        foreach (GameObject gobj in rubble) {
+            float newDistx = Math.Abs(impPosition.x - gobj.transform.position.x);
+            float newDisty = Math.Abs(impPosition.y - gobj.transform.position.y);
+            if (newDistx + newDisty < minDist && !rubbleClaiming.Contains(gobj)) {
+                minDist = newDistx + newDisty;
+                closestRubble = gobj; 
+            }
+        }
+        return closestRubble; 
+    }
+
+    public void MarkAvailableRoomTiles() {
+        for (int i = 0; i < claimedLocations.Count; i++)
+        {
+            int[] inds = GetTileIndex(claimedLocations[i]);
+            CreateNewTile(claimedLocations[i], inds[0], inds[1]);
+            Debug.Log("CREATING NEW TILE");
+
+            GameObject gobj = new GameObject("tile: ");
+            gobj.AddComponent<SpriteRenderer>();
+            gobj.GetComponent<SpriteRenderer>().sprite = okSprite;
+            gobj.transform.position = new Vector3(mapPositionMatrix[inds[0], inds[1]].x, mapPositionMatrix[inds[0], inds[1]].y, -3.3f);
+            
+        }
 
 
+    }
 
 }
